@@ -220,8 +220,9 @@ process StringTie2 {
 
 // Combine channels for feature count with gtf from transcriptome reconstruction
 ch_annot_feature_count
-    .mix(ch_annot_feature_count)
-    .println()
+    .concat(ch_txome_feature_count)
+
+ch_annot_feature_count.println()
 
 
 /*
