@@ -106,23 +106,6 @@ log.info "\033[2m----------------------------------------------------\033[0m"
 // Check the hostnames against configured profiles
 checkHostname()
 
-def create_workflow_summary(summary) {
-    def yaml_file = workDir.resolve('workflow_summary_mqc.yaml')
-    yaml_file.text  = """
-    id: 'nf-core-nanornabam-summary'
-    description: " - this information is collected when the pipeline is started."
-    section_name: 'nf-core/nanornabam Workflow Summary'
-    section_href: 'https://github.com/nf-core/nanornabam'
-    plot_type: 'html'
-    data: |
-        <dl class=\"dl-horizontal\">
-${summary.collect { k,v -> "            <dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }.join("\n")}
-        </dl>
-    """.stripIndent()
-
-   return yaml_file
-}
-
 /*
  * STEP 1 - Process samplesheet
  */
@@ -268,6 +251,23 @@ process get_software_versions {
     echo $workflow.nextflow.version > nextflow.version
     scrape_software_versions.py &> software_versions_mqc.yaml
     """
+}
+
+def create_workflow_summary(summary) {
+    def yaml_file = workDir.resolve('workflow_summary_mqc.yaml')
+    yaml_file.text  = """
+    id: 'nf-core-nanornabam-summary'
+    description: " - this information is collected when the pipeline is started."
+    section_name: 'nf-core/nanornabam Workflow Summary'
+    section_href: 'https://github.com/nf-core/nanornabam'
+    plot_type: 'html'
+    data: |
+        <dl class=\"dl-horizontal\">
+${summary.collect { k,v -> "            <dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }.join("\n")}
+        </dl>
+    """.stripIndent()
+
+   return yaml_file
 }
 
 /*
