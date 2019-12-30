@@ -200,30 +200,28 @@ ch_samplesheet_reformat
     .into { ch_txome_reconstruction;
             ch_annot_feature_count}
 
-    ch_txome_reconstruction.println()
-
 /*
  * STEP 2 - StringTie2
  */
-// process StringTie2 {
-//     publishDir "${params.outdir}/stringtie2", mode: 'copy'
-//
-//     input:
-//     set val(name), file(bam), file(annot) from ch_txome_reconstruction
-//
-//     output:
-//     set val(name), file("*.out.gtf") into ch_txome_feature_count
-//
-//     script:
-//     """
-//     stringtie -L -G $annot -o ${name}.out.gtf $bam
-//     """
-// }
-//
-// // Combine channels for txome and annot feature count
-// ch_txome_feature_count
-//     .join(ch_annot_feature_count) // join on sample name
-//     .println()
+process StringTie2 {
+    publishDir "${params.outdir}/stringtie2", mode: 'copy'
+
+    input:
+    set val(name), file(bam), file(annot) from ch_txome_reconstruction
+
+    output:
+    set val(name), file("*.out.gtf") into ch_txome_feature_count
+
+    script:
+    """
+    stringtie -L -G $annot -o ${name}.out.gtf $bam
+    """
+}
+
+// Combine channels for txome and annot feature count
+ch_txome_feature_count
+    .join(ch_annot_feature_count) // join on sample name
+    .println()
 
 
 /*
