@@ -210,7 +210,7 @@ process StringTie2 {
     set val(name), file(bam), file(annot) from ch_txome_reconstruction
 
     output:
-    set val(name), file("*.out.gtf") into ch_txome_feature_count
+    set val(name), file(bam), file("*.out.gtf") into ch_txome_feature_count
 
     script:
     """
@@ -218,9 +218,9 @@ process StringTie2 {
     """
 }
 
-// Combine channels for txome and annot feature count
-ch_txome_feature_count
-    .join(ch_annot_feature_count) // join on sample name
+// Combine channels for feature count with gtf from transcriptome reconstruction
+ch_annot_feature_count
+    .mix(ch_annot_feature_count)
     .println()
 
 
