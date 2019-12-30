@@ -237,9 +237,9 @@ ch_annot_feature_count
      file("*.txt") into ch_counts
 
      script:
-     txome_recon = (annot.endsWith(".out.gtf")) ? ".tx_recon" : ""
+     txome_recon = (annot =~ /\.out\.gtf/) ? ".tx_recon" : ""
      """
-     featureCounts -T $task.cpus -a $annot -o ${name}.counts${txome_recon}.txt $bam
+     featureCounts -T $task.cpus -a $annot -o ${name}${txome_recon}.counts.txt $bam
      """
  }
 
