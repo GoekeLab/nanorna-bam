@@ -172,36 +172,58 @@ process CheckSampleSheet {
     """
 }
 
+// Function to resolve gtf file if using iGenomes and to check the bam file exists
+// Returns [ sample, bam, annotation]
+def get_sample_info(LinkedHashMap sample, LinkedHashMap genomeMap) {
+
+    // Resolve gtf file if using iGenomes
+    def gtf = false
+    if (sample.annotation) {
+        if (genomeMap.containsKey(sample.annotation)) {
+            gtf = file(genomeMap[sample.annotation].gtf, checkIfExists: true)
+        } else {
+            gtf = file(sample.annotation, checkIfExists: true)
+        }
+    }
+
+    // Check if bam file exists
+    bam = file(sample.bam, checkIfExists: true)
+
+    return [ sample.sample, bam, gtf ]
+}
+
 // Sort the samplesheet entries into correct channels
 ch_samplesheet_reformat
     .splitCsv(header:true, sep:',')
-    .map { it -> [ it[0], it[1], it[2] ] }
+    .map { get_sample_info(it, params.genomes) }
+    .map { it -> [ it[0], it[1], it[2] ] } // [samplename, bam, annotations]
     .into { ch_txome_reconstruction;
             ch_annot_feature_count}
 
+    ch_txome_reconstruction.println()
 
 /*
  * STEP 2 - StringTie2
  */
-process StringTie2 {
-    publishDir "${params.outdir}/stringtie2", mode: 'copy'
-
-    input:
-    set val(name), file(bam), file(annot) from ch_txome_reconstruction
-
-    output:
-    set val(name), file("*.out.gtf") into ch_txome_feature_count
-
-    script:
-    """
-    stringtie -L -G $annot -o ${name}.out.gtf $bam
-    """
-}
-
-// Combine channels for txome and annot feature count
-ch_txome_feature_count
-    .join(ch_annot_feature_count) // join on sample name
-    .println()
+// process StringTie2 {
+//     publishDir "${params.outdir}/stringtie2", mode: 'copy'
+//
+//     input:
+//     set val(name), file(bam), file(annot) from ch_txome_reconstruction
+//
+//     output:
+//     set val(name), file("*.out.gtf") into ch_txome_feature_count
+//
+//     script:
+//     """
+//     stringtie -L -G $annot -o ${name}.out.gtf $bam
+//     """
+// }
+//
+// // Combine channels for txome and annot feature count
+// ch_txome_feature_count
+//     .join(ch_annot_feature_count) // join on sample name
+//     .println()
 
 
 /*
