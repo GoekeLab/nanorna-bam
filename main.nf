@@ -255,8 +255,8 @@ process get_software_versions {
                 }
 
     input:
-    file featcts from ch_feat_counts_version.collect().ifEmpty([])
-    file pycoqc from ch_stringtie_version.collect().ifEmpty([])
+    file featcts from ch_feat_counts_version.first().ifEmpty([])
+    file pycoqc from ch_stringtie_version.first().ifEmpty([])
 
     output:
     file 'software_versions_mqc.yaml' into software_versions_yaml
