@@ -223,12 +223,30 @@ ch_annot_feature_count
     .concat(ch_txome_feature_count)
     .set{ ch_feature_count }
 
-ch_feature_count.println()
-
 
 /*
  * STEP 3 - FeatureCounts
  */
+ process FeatureCounts {
+     publishDir "${params.outdir}/featureCounts", mode: 'copy'
+
+     input:
+     set val(name), file(bam), file(annot) from ch_feature_count
+
+     output:
+     file("*.txt") into ch_counts
+
+     script:
+     txome_recon = (annot.endsWith(".out.gtf")) ? ".tx_recon" : ""
+     """
+     featureCounts -T $task.cpus -a $annot -o ${name}.counts${txome_recon}.txt $bam
+     """
+ }
+
+
+
+
+
 // process output_documentation {
 //     publishDir "${params.outdir}/pipeline_info", mode: 'copy'
 //
