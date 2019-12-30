@@ -127,13 +127,17 @@ ${summary.collect { k,v -> "            <dt>$k</dt><dd><samp>${v ?: '<span style
 /*
  * Parse software version numbers
  */
- // LAURA: Send all the software version strings staged in channels to this process to collate && Send to bottom
-/*process get_software_versions {
+// LAURA: Send all the software version strings staged in channels to this process to collate && Send to bottom
+process get_software_versions {
     publishDir "${params.outdir}/pipeline_info", mode: 'copy',
-    saveAs: {filename ->
-        if (filename.indexOf(".csv") > 0) filename
-        else null
-    }
+        saveAs: { filename ->
+                      if (filename.indexOf(".csv") > 0) filename
+                      else null
+                }
+
+    input:
+    file featcts from ch_feat_counts_version.collect().ifEmpty([])
+    file pycoqc from ch_stringtie_version.collect().ifEmpty([])
 
     output:
     file 'software_versions_mqc.yaml' into software_versions_yaml
@@ -141,13 +145,11 @@ ${summary.collect { k,v -> "            <dt>$k</dt><dd><samp>${v ?: '<span style
 
     script:
     """
-    echo $workflow.manifest.version > v_pipeline.txt
-    echo $workflow.nextflow.version > v_nextflow.txt
-    fastqc --version > v_fastqc.txt
-    multiqc --version > v_multiqc.txt
+    echo $workflow.manifest.version > pipeline.version
+    echo $workflow.nextflow.version > nextflow.version
     scrape_software_versions.py &> software_versions_mqc.yaml
     """
-}*/
+}
 
 
 
@@ -369,10 +371,10 @@ workflow.onComplete {
     c_green = params.monochrome_logs ? '' : "\033[0;32m";
     c_red = params.monochrome_logs ? '' : "\033[0;31m";
 
-    if (workflow.stats.ignoredCountFmt > 0 && workflow.success) {
-      log.info "${c_purple}Warning, pipeline completed, but with errored process(es) ${c_reset}"
-      log.info "${c_red}Number of ignored errored process(es) : ${workflow.stats.ignoredCountFmt} ${c_reset}"
-      log.info "${c_green}Number of successfully ran process(es) : ${workflow.stats.succeedCountFmt} ${c_reset}"
+    if (workflow.stats.ignoredCount > 0 && workflow.success) {
+        log.info "${c_purple}Warning, pipeline completed, but with errored process(es) ${c_reset}"
+        log.info "${c_red}Number of ignored errored process(es) : ${workflow.stats.ignoredCount} ${c_reset}"
+        log.info "${c_green}Number of successfully ran process(es) : ${workflow.stats.succeedCount} ${c_reset}"
     }
 
     if(workflow.success){
