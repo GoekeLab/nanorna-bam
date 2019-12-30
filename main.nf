@@ -123,36 +123,6 @@ ${summary.collect { k,v -> "            <dt>$k</dt><dd><samp>${v ?: '<span style
    return yaml_file
 }
 
-
-/*
- * Parse software version numbers
- */
-// LAURA: Send all the software version strings staged in channels to this process to collate && Send to bottom
-process get_software_versions {
-    publishDir "${params.outdir}/pipeline_info", mode: 'copy',
-        saveAs: { filename ->
-                      if (filename.indexOf(".csv") > 0) filename
-                      else null
-                }
-
-    input:
-    file featcts from ch_feat_counts_version.collect().ifEmpty([])
-    file pycoqc from ch_stringtie_version.collect().ifEmpty([])
-
-    output:
-    file 'software_versions_mqc.yaml' into software_versions_yaml
-    file "software_versions.csv"
-
-    script:
-    """
-    echo $workflow.manifest.version > pipeline.version
-    echo $workflow.nextflow.version > nextflow.version
-    scrape_software_versions.py &> software_versions_mqc.yaml
-    """
-}
-
-
-
 /*
  * STEP 1 - Process samplesheet
  */
@@ -274,7 +244,31 @@ ch_annot_feature_count
 //     """
 // }
 
+/*
+ * Parse software version numbers
+ */
+process get_software_versions {
+    publishDir "${params.outdir}/pipeline_info", mode: 'copy',
+        saveAs: { filename ->
+                      if (filename.indexOf(".csv") > 0) filename
+                      else null
+                }
 
+    input:
+    file featcts from ch_feat_counts_version.collect().ifEmpty([])
+    file pycoqc from ch_stringtie_version.collect().ifEmpty([])
+
+    output:
+    file 'software_versions_mqc.yaml' into software_versions_yaml
+    file "software_versions.csv"
+
+    script:
+    """
+    echo $workflow.manifest.version > pipeline.version
+    echo $workflow.nextflow.version > nextflow.version
+    scrape_software_versions.py &> software_versions_mqc.yaml
+    """
+}
 
 /*
  * Completion e-mail notification
