@@ -80,9 +80,10 @@ while True:
                 print("{}: Annotation field contains spaces!\nLine: '{}'".format(ERROR_STR,line.strip()))
                 sys.exit(1)
 
-            if annotation[-4:] != '.gtf' and annotation[-4:] != '.gff' and annotation[-7:] != '.gtf.gz' and annotation[-7:] != '.gff.gz':
-                print("{}: Annotation field has incorrect extension (has to be '.gtf', '.gff', '.gtf.gz' or '.gff.gz')!\nLine: '{}'".format(ERROR_STR,line.strip()))
-                sys.exit(1)
+            if len(genome.split('.')) > 1:
+                if annotation[-4:] != '.gtf' and annotation[-4:] != '.gff' and annotation[-7:] != '.gtf.gz' and annotation[-7:] != '.gff.gz':
+                    print("{}: Annotation field has incorrect extension (has to be '.gtf', '.gff', '.gtf.gz' or '.gff.gz')!\nLine: '{}'".format(ERROR_STR,line.strip()))
+                    sys.exit(1)
 
         else:
             print("{}: Annotation file not specified!\nLine: '{}'".format(ERROR_STR,line.strip()))
