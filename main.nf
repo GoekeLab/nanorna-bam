@@ -249,7 +249,7 @@ process get_software_versions {
     """
     echo $workflow.manifest.version > pipeline.version
     echo $workflow.nextflow.version > nextflow.version
-    scrape_software_versions.py &> software_versions_mqc.yaml
+    scrape_software_versions.py > software_versions_mqc.yaml
     """
 }
 
