@@ -55,8 +55,12 @@ NXF_OPTS='-Xms1g -Xmx4g'
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run nf-core/nanornabam --reads '*_R{1,2}.fastq.gz' -profile docker
+nextflow run nf-core/nanornabam --input 'samples.csv' -profile docker
 ```
+where samples.csv should contain three columns, namely
+| sample | bam            | annotion                 |
+|--------|----------------|--------------------------|
+|sampl1  | path_to_bamfile| path_annotation_fastafile|
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
 
@@ -106,29 +110,6 @@ If `-profile` is not specified at all the pipeline will be run locally and expec
   * A profile with a complete configuration for automated testing
   * Includes links to test data so needs no other parameters
 
-<!-- TODO nf-core: Document required command line parameters -->
-
-### `--reads`
-Use this to specify the location of your input FastQ files. For example:
-
-```bash
---reads 'path/to/data/sample_*_{1,2}.fastq'
-```
-
-Please note the following requirements:
-
-1. The path must be enclosed in quotes
-2. The path must have at least one `*` wildcard character
-3. When using the pipeline with paired end data, the path must use `{1,2}` notation to specify read pairs.
-
-If left unspecified, a default pattern is used: `data/*{1,2}.fastq.gz`
-
-### `--singleEnd`
-By default, the pipeline expects paired-end data. If you have single-end data, you need to specify `--singleEnd` on the command line when you launch the pipeline. A normal glob pattern, enclosed in quotation marks, can then be used for `--reads`. For example:
-
-```bash
---singleEnd --reads '*.fastq'
-```
 
 It is not possible to run a mixture of single-end and paired-end files in one run.
 
@@ -170,13 +151,7 @@ params {
 }
 ```
 
-<!-- TODO nf-core: Describe reference path flags -->
-### `--fasta`
-If you prefer, you can specify the full path to your reference genome when you run the pipeline:
 
-```bash
---fasta '[path to Fasta reference]'
-```
 
 ### `--igenomesIgnore`
 Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`.
