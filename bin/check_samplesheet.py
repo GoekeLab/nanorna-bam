@@ -34,7 +34,7 @@ args = argParser.parse_args()
 ############################################
 
 ERROR_STR = 'ERROR: Please check samplesheet'
-HEADER = ['sample', 'bam', 'annotation']
+HEADER = ['sample', 'bam', 'annotation', 'condition']
 
 ## CHECK HEADER
 fin = open(args.DESIGN_FILE_IN,'r')
