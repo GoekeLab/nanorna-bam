@@ -208,8 +208,6 @@ ch_annot_feature_count
      """
  }
 
-
-params.sampinfo = "results/sampleInfo.csv"
 params.indir = "results/featureCounts"
 params.DEscript= "bin/runDESeq2.R"
 params.outdir = "results"
@@ -226,7 +224,7 @@ process DESeq2 {
                 }
 
   input:
-  file sampleinfo from ch_sampinfo
+  file sampleinfo from ch_input
   file DESeq2script from ch_DEscript
   val indir from ch_indir
 
