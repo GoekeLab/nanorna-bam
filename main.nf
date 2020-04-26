@@ -209,8 +209,35 @@ ch_annot_feature_count
  }
 
 
+params.sampinfo = "results/sampleInfo.csv"
+params.indir = "results/featureCounts"
+params.DEscript= "bin/runDESeq2.R"
+params.outdir = "results"
+ch_sampinfo = Channel.fromPath("$params.sampinfo", checkIfExists:true)
+ch_indir = Channel.fromPath("$params.indir", checkIfExists:true)
+ch_DEscript = Channel.fromPath("$params.DEscript", checkIfExists:true)
+/*
+ * STEP 4 - DESeq2
+ */
+process DESeq2 {
+  publishDir "${params.outdir}/DESeq2", mode: 'copy',
+        saveAs: { filename ->
+                      if (!filename.endsWith(".version")) filename
+                }
 
+  input:
+  file sampleinfo from ch_sampinfo
+  file DESeq2script from ch_DEscript
+  val indir from ch_indir
 
+  output:
+  file "out.txt" into ch_DEout
+
+  script:
+  """
+  Rscript --vanilla $DESeq2script $indir $sampleinfo
+  """
+}
 
 // process output_documentation {
 //     publishDir "${params.outdir}/pipeline_info", mode: 'copy'
