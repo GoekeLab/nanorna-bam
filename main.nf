@@ -208,15 +208,15 @@ ch_annot_feature_count
      """
  }
 
-params.indir = "results/featureCounts"
-params.DEscript= "bin/runDESeq2.R"
-params.outdir = "results"
-ch_sampinfo = Channel.fromPath("$params.sampinfo", checkIfExists:true)
-ch_indir = Channel.fromPath("$params.indir", checkIfExists:true)
-ch_DEscript = Channel.fromPath("$params.DEscript", checkIfExists:true)
+
 /*
  * STEP 4 - DESeq2
  */
+params.indir = "results/featureCounts"
+params.DEscript= "bin/runDESeq2.R"
+ch_indir = Channel.fromPath("$params.indir", checkIfExists:true)
+ch_DEscript = Channel.fromPath("$params.DEscript", checkIfExists:true)
+
 process DESeq2 {
   publishDir "${params.outdir}/DESeq2", mode: 'copy',
         saveAs: { filename ->
