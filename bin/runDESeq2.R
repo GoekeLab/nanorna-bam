@@ -1,4 +1,14 @@
 #!/usr/bin/env Rscript
+
+if (!requireNamespace("BiocManager", quietly = TRUE)){
+    install.packages("BiocManager", repos='http://cran.us.r-project.org')
+ }
+if (!require("DESeq2")){
+    BiocManager::install("DESeq2",update = FALSE, ask= FALSE)
+    library(DESeq2)
+}
+
+
 args = commandArgs(trailingOnly=TRUE)
 if (length(args) < 2) {
   stop("Please input the directory with the featureCounts results and the sample information file", call.=FALSE)
@@ -7,8 +17,6 @@ if (length(args) < 2) {
   args[3] = "out.txt"
 }
 #DeSeq2
-library("DESeq2")
-library("BiocParallel")
 path<-args[1]
 count_files<- grep(list.files(path), pattern='tx_', inv=T, value=T)
 #create a dataframe for all samples 
@@ -27,6 +35,6 @@ all(rownames(sampInfo) == colnames(countTab))
 dds <- DESeqDataSetFromMatrix(countData = countTab,colData = sampInfo,design = ~ condition)
 dds <- DESeq(dds)
 res <- results(dds)
-register(MulticoreParam(4))
+register(MulticoreParam(6))
 resOrdered <- res[order(res$pvalue),]
 write.csv(as.data.frame(resOrdered), file=args[3])
