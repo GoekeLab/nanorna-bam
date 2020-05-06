@@ -258,7 +258,7 @@ process DESeq2 {
   input:
   file sampleinfo from ch_input
   file DEXscript from ch_DEXscript
-  val indir from ch_deseq_indir
+  val indir from ch_dex_indir
 
   output:
   file "*.txt" into ch_DEXout
