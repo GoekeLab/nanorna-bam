@@ -249,7 +249,7 @@ params.DEXscript= "bin/runDEXseq.R"
 ch_dex_indir = Channel.fromPath("$params.dex_indir", checkIfExists:true)
 ch_DEXscript = Channel.fromPath("$params.DEXscript", checkIfExists:true)
 
-process DESeq2 {
+process DEXseq {
   publishDir "${params.outdir}/DEXseq", mode: 'copy',
         saveAs: { filename ->
                       if (!filename.endsWith(".version")) filename
