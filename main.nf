@@ -203,6 +203,8 @@ ch_annot_feature_count
      output:
      file("*.txt") into ch_counts
      file("*.version") into ch_feat_counts_version
+     val "result/featureCounts_gene" into ch_deseq_indir
+     val "result/featureCounts_transcript" into ch_dex_indir
 
      script:
      txome_recon = (annot =~ /\.out\.gtf/) ? ".tx_recon" : ""
@@ -216,9 +218,7 @@ ch_annot_feature_count
 /*
  * STEP 4 - DESeq2
  */
-params.deseq_indir = "results/featureCounts_gene"
 params.DEscript= "bin/runDESeq2.R"
-ch_deseq_indir = Channel.fromPath("$params.deseq_indir", checkIfExists:true)
 ch_DEscript = Channel.fromPath("$params.DEscript", checkIfExists:true)
 
 process DESeq2 {
@@ -235,18 +235,18 @@ process DESeq2 {
   output:
   file "*.txt" into ch_DEout
 
+
   script:
   """
-  Rscript --vanilla $DESeq2script $indir $sampleinfo
+  echo ls $indir
+  Rscript --vanilla $DESeq2script ${PWD}/$indir $sampleinfo
   """
 }
 
 /*
  * STEP 5 - DEXseq
  */
-params.dex_indir = "results/featureCounts_transcript"
 params.DEXscript= "bin/runDEXseq.R"
-ch_dex_indir = Channel.fromPath("$params.dex_indir", checkIfExists:true)
 ch_DEXscript = Channel.fromPath("$params.DEXscript", checkIfExists:true)
 
 process DEXseq {
@@ -265,7 +265,7 @@ process DEXseq {
 
   script:
   """
-  Rscript --vanilla $DEXscript $indir $sampleinfo
+  Rscript --vanilla $DEXscript ${PWD}/$indir $sampleinfo
   """
 }
 
