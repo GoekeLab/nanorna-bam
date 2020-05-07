@@ -238,7 +238,6 @@ process DESeq2 {
 
   script:
   """
-  echo ls $indir
   Rscript --vanilla $DESeq2script ${PWD}/$indir $sampleinfo
   """
 }
