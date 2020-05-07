@@ -10,3 +10,7 @@ dependencies:
   - fastqc=0.11.8
   - multiqc=1.7
   - r-base=3.6.1
+  - conda-forge::r-data.table=1.12.4
+  - bioconductor-deseq2=1.26.0
+  - bioconductor-drimseq=1.14.0
+  - bioconductor-dexseq=1.32.0
