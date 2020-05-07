@@ -9,6 +9,9 @@ if (!require("DRIMSeq")){
 if (!require("DEXSeq")){
     BiocManager::install("DEXSeq",update = FALSE, ask= FALSE)
 }
+if (!require("stageR")){
+    BiocManager::install("stageR",update = FALSE, ask= FALSE)
+}
 
 args = commandArgs(trailingOnly=TRUE)
 if (length(args) < 2) {
@@ -65,17 +68,28 @@ dxd <- DEXSeqDataSet(countData=round(as.matrix(counts(dFilter)[,-c(1:2)])),
                      design=formulaFullModel,
                      featureID = counts(dFilter)$feature_id,
                      groupID=counts(dFilter)$gene_id)
-system.time({
-  BPPARAM <- MulticoreParam(6)
-  dxd <- estimateSizeFactors(dxd)
-  print('Size factor estimated')
-  dxd <- estimateDispersions(dxd, formula = formulaFullModel, BPPARAM=BPPARAM)
-  print('Dispersion estimated')
-  dxd <- testForDEU(dxd, fullModel = formulaFullModel, BPPARAM=BPPARAM)
-  print('DEU tested')
-  dxd <- estimateExonFoldChanges(dxd, BPPARAM=BPPARAM)
-  print('Exon fold changes estimated')
-}) 
+
+dxd <- estimateSizeFactors(dxd)
+print('Size factor estimated')
+dxd <- estimateDispersions(dxd, formula = formulaFullModel)
+print('Dispersion estimated')
+dxd <- testForDEU(dxd, fullModel = formulaFullModel)
+print('DEU tested')
+dxd <- estimateExonFoldChanges(dxd)
+print('Exon fold changes estimated')
+
+#system.time({
+ # BPPARAM <- MulticoreParam(6)
+#  dxd <- estimateSizeFactors(dxd)
+#  print('Size factor estimated')
+#  dxd <- estimateDispersions(dxd, formula = formulaFullModel, BPPARAM=BPPARAM)
+#  print('Dispersion estimated')
+#  dxd <- testForDEU(dxd, fullModel = formulaFullModel, BPPARAM=BPPARAM)
+#  print('DEU tested')
+#  dxd <- estimateExonFoldChanges(dxd)
+ # dxd <- estimateExonFoldChanges(dxd, BPPARAM=BPPARAM)
+#  print('Exon fold changes estimated')
+#}) 
 # Extract DEXSeq results 
 dxr <- DEXSeqResults(dxd, independentFiltering=FALSE)
 
