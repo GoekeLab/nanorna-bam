@@ -77,7 +77,7 @@ dxd <- testForDEU(dxd, fullModel = formulaFullModel)
 print('DEU tested')
 dxd <- estimateExonFoldChanges(dxd)
 print('Exon fold changes estimated')
-
+##Got an error with the MulticoreParam on Docker, but the MulticoreParam was fine locally.
 #system.time({
  # BPPARAM <- MulticoreParam(6)
 #  dxd <- estimateSizeFactors(dxd)
