@@ -62,7 +62,7 @@ dFilter <- dmFilter(d,
 
 ########## DEXSeq #########
 formulaFullModel <- as.formula("~sample + exon + condition:exon")
-#formulaReducedModel <- as.formula("~sample + exon + covariate:exon")
+formulaReducedModel <- as.formula("~sample + exon + covariate:exon")
 dxd <- DEXSeqDataSet(countData=round(as.matrix(counts(dFilter)[,-c(1:2)])),
                      sampleData=DRIMSeq::samples(dFilter),
                      design=formulaFullModel,
@@ -73,7 +73,7 @@ dxd <- estimateSizeFactors(dxd)
 print('Size factor estimated')
 dxd <- estimateDispersions(dxd, formula = formulaFullModel)
 print('Dispersion estimated')
-dxd <- testForDEU(dxd, fullModel = formulaFullModel)
+dxd <- testForDEU(dxd, reducedModel = formulaReducedModel, fullModel = formulaFullModel)
 print('DEU tested')
 dxd <- estimateExonFoldChanges(dxd)
 print('Exon fold changes estimated')
