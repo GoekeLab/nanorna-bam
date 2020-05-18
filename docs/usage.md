@@ -58,9 +58,10 @@ The typical command for running the pipeline is as follows:
 nextflow run nf-core/nanornabam --input 'samples.csv' -profile docker
 ```
 where samples.csv should contain three columns, namely
-| sample | bam            | annotion                 | condition                          |
-|--------|----------------|--------------------------|------------------------------------|
-|sampl1  | path_to_bamfile| path_annotation_fastafile|for differential expression analysis|
+| sample | bam            | annotion                 | condition       |     covariate       |
+|--------|----------------|--------------------------|-----------------|---------------------|
+|sampl1  | path_to_bamfile| path_annotation_fastafile| condition_value |     covariate_value |
+
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
 
