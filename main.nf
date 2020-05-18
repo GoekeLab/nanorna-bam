@@ -188,9 +188,13 @@ ch_annot_feature_count
  * STEP 3 - FeatureCounts
  */
  process FeatureCounts {
-     publishDir "${params.outdir}/featureCounts", mode: 'copy',
+     publishDir "${params.outdir}/featureCounts_transcript", mode: 'copy',
          saveAs: { filename ->
-                       if (!filename.endsWith(".version")) filename
+                 if (!filename.endsWith(".version") && !filename.endsWith(".gene_counts.txt")) filename
+                 }
+     publishDir "${params.outdir}/featureCounts_gene", mode: 'copy',
+         saveAs: { filename ->
+                 if (!filename.endsWith(".version") && !filename.endsWith(".transcript_counts.txt")) filename
                  }
 
      input:
@@ -199,18 +203,70 @@ ch_annot_feature_count
      output:
      file("*.txt") into ch_counts
      file("*.version") into ch_feat_counts_version
+     val "result/featureCounts_gene" into ch_deseq_indir
+     val "result/featureCounts_transcript" into ch_dex_indir
 
      script:
      txome_recon = (annot =~ /\.out\.gtf/) ? ".tx_recon" : ""
      """
-     featureCounts -T $task.cpus -a $annot -o ${name}${txome_recon}.counts.txt $bam
+     featureCounts -T $task.cpus -a $annot -o ${name}${txome_recon}.gene_counts.txt $bam
+     featureCounts -g transcript_id --extraAttributes gene_id  -T $task.cpus -a $annot -o ${name}${txome_recon}.transcript_counts.txt $bam
      featureCounts -v &> featureCounts.version
      """
  }
 
+/*
+ * STEP 4 - DESeq2
+ */
+params.DEscript= "bin/runDESeq2.R"
+ch_DEscript = Channel.fromPath("$params.DEscript", checkIfExists:true)
+
+process DESeq2 {
+  publishDir "${params.outdir}/DESeq2", mode: 'copy',
+        saveAs: { filename ->
+                      if (!filename.endsWith(".version")) filename
+                }
+
+  input:
+  file sampleinfo from ch_input
+  file DESeq2script from ch_DEscript
+  val indir from ch_deseq_indir
+
+  output:
+  file "*.txt" into ch_DEout
 
 
+  script:
+  """
+  Rscript --vanilla $DESeq2script ${PWD}/$indir $sampleinfo
+  """
+}
 
+/*
+ * STEP 5 - DEXseq
+ */
+params.DEXscript= "bin/runDEXseq.R"
+ch_DEXscript = Channel.fromPath("$params.DEXscript", checkIfExists:true)
+
+process DEXseq {
+  publishDir "${params.outdir}/DEXseq", mode: 'copy',
+        saveAs: { filename ->
+                      if (!filename.endsWith(".version")) filename
+                }
+
+  input:
+  file sampleinfo from ch_input
+  file DEXscript from ch_DEXscript
+  val indir from ch_dex_indir
+
+  output:
+  file "*.txt" into ch_DEXout
+
+  script:
+  """
+  Rscript --vanilla $DEXscript ${PWD}/$indir $sampleinfo
+  """
+}
 
 // process output_documentation {
 //     publishDir "${params.outdir}/pipeline_info", mode: 'copy'
