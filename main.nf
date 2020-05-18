@@ -203,8 +203,8 @@ ch_annot_feature_count
      output:
      file("*.txt") into ch_counts
      file("*.version") into ch_feat_counts_version
-     val "result/featureCounts_gene" into ch_deseq_indir
-     val "result/featureCounts_transcript" into ch_dex_indir
+     val "${params.outdir}/featureCounts_gene" into ch_deseq_indir
+     val "${params.outdir}/featureCounts_transcript" into ch_dex_indir
 
      script:
      txome_recon = (annot =~ /\.out\.gtf/) ? ".tx_recon" : ""
@@ -218,7 +218,7 @@ ch_annot_feature_count
 /*
  * STEP 4 - DESeq2
  */
-params.DEscript= "bin/runDESeq2.R"
+params.DEscript= "$baseDir/bin/runDESeq2.R"
 ch_DEscript = Channel.fromPath("$params.DEscript", checkIfExists:true)
 
 process DESeq2 {
@@ -245,7 +245,7 @@ process DESeq2 {
 /*
  * STEP 5 - DEXseq
  */
-params.DEXscript= "bin/runDEXseq.R"
+params.DEXscript= "$baseDir/bin/runDEXseq.R"
 ch_DEXscript = Channel.fromPath("$params.DEXscript", checkIfExists:true)
 
 process DEXseq {
