@@ -34,7 +34,7 @@ args = argParser.parse_args()
 ############################################
 
 ERROR_STR = 'ERROR: Please check samplesheet'
-HEADER = ['sample', 'bam', 'annotation']
+HEADER = ['sample', 'bam', 'annotation', 'condition']
 
 ## CHECK HEADER
 fin = open(args.DESIGN_FILE_IN,'r')
@@ -47,7 +47,7 @@ outLines = []
 while True:
     line = fin.readline()
     if line:
-        lspl = [x.strip() for x in line.strip().split(',')]
+        lspl = [x.strip() for x in line.strip().split(',')][:-1]
         sample,bam, annotation = lspl
 
         ## CHECK VALID NUMBER OF COLUMNS PER SAMPLE
