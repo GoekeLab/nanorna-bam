@@ -38,7 +38,8 @@ colnames(count.matrix)[1] <- "feature_id"
 #sampleinfo<-read.table("~/Downloads/nanorna-bam-master/samples_conditions.csv",sep=",",header=T)
 sampleinfo<-read.table(args[2],sep=",",header=T)
 colnames(sampleinfo)[1] <- "sample_id"
-condition_names <- c(levels(sampleinfo$condition))
+condition_names <- sampleinfo[!duplicated(sampleinfo$condition),]$condition
+#condition_names <- c(levels(sampleinfo$condition))
 lgcolName <- "log2fold"
 for (i in length(condition_names):1){
   lgcolName <- paste(lgcolName,condition_names[i],sep='_')
