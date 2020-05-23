@@ -38,6 +38,6 @@ all(rownames(sampInfo) == colnames(countTab))
 dds <- DESeqDataSetFromMatrix(countData = countTab,colData = sampInfo,design = ~ condition)
 dds <- DESeq(dds)
 res <- results(dds)
-register(MulticoreParam(6))
+#register(MulticoreParam(6))
 resOrdered <- res[order(res$pvalue),]
 write.csv(as.data.frame(resOrdered), file=args[3])
