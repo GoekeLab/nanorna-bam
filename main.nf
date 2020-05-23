@@ -190,7 +190,7 @@ ch_annot_feature_count
  process FeatureCounts {
      publishDir "${params.outdir}/featureCounts_transcript", mode: 'copy',
          saveAs: { filename ->
-                 if (!filename.endsWith(".version") && !filename.endsWith(".gene_counts.txt")) filename
+                 if (!filename.endsWith(".version")) filename
                  }
 
      input:
@@ -199,7 +199,6 @@ ch_annot_feature_count
      output:
      file("*.txt") into ch_counts
      file("*.version") into ch_feat_counts_version
-     val "result/featureCounts_transcript" into ch_trnsFC_indir
 
      script:
      txome_recon = (annot =~ /\.out\.gtf/) ? ".tx_recon" : ""
@@ -224,7 +223,6 @@ process DESeq2 {
   input:
   file sampleinfo from ch_input
   file DESeq2script from ch_DEscript
-  val indir from ch_trnsFC_indir
 
   output:
   file "*.txt" into ch_DEout
@@ -232,7 +230,7 @@ process DESeq2 {
 
   script:
   """
-  Rscript --vanilla $DESeq2script ${PWD}/$indir $sampleinfo
+  Rscript --vanilla $DESeq2script ${PWD}/result/featureCounts_transcript $sampleinfo
   """
 }
 
@@ -251,14 +249,13 @@ process DEXseq {
   input:
   file sampleinfo from ch_input
   file DEXscript from ch_DEXscript
-  val indir from ch_trnsFC_indir
 
   output:
   file "*.txt" into ch_DEXout
 
   script:
   """
-  Rscript --vanilla $DEXscript ${PWD}/$indir $sampleinfo
+  Rscript --vanilla $DEXscript ${PWD}/result/featureCounts_transcript $sampleinfo
   """
 }
 
