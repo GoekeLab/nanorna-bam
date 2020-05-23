@@ -27,9 +27,11 @@ for(i in 2:length(count_files)){
   samp_df <- read.table(fullpath,sep="\t",header=T)[,c(1,8)]
   count.matrix<- merge(count.matrix,samp_df,by="Geneid",all=TRUE)
 }
-countTab <- count.matrix[,-1]
-rownames(countTab) <- count.matrix[,1]
-countTab <- aggregate(. ~ gene_id, data=countTab, FUN=sum)
+df <- count.matrix[,-1]
+rownames(df) <- count.matrix[,1]
+df <- aggregate(. ~ gene_id, data=df, FUN=sum)
+countTab <- df[,-1]
+rownames(countTab) <- df[,1]
 sampInfo<-read.csv(args[2],row.names=1)
 all(rownames(sampInfo) %in% colnames(countTab))
 all(rownames(sampInfo) == colnames(countTab))
