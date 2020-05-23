@@ -199,8 +199,8 @@ ch_annot_feature_count
      output:
      file("*.txt") into ch_counts
      file("*.version") into ch_feat_counts_version
-     val "mod/featureCounts_transcript" into ch_deseq2_indir
-     val "mod/featureCounts_transcript" into ch_dexseq_indir
+     val "results/featureCounts_transcript" into ch_deseq2_indir
+     val "results/featureCounts_transcript" into ch_dexseq_indir
 
      script:
      txome_recon = (annot =~ /\.out\.gtf/) ? ".tx_recon" : ""
