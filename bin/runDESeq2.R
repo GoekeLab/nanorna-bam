@@ -20,15 +20,16 @@ if (length(args) < 2) {
 path<-args[1]
 count_files<- grep(list.files(path), pattern='tx_', inv=T, value=T)
 #create a dataframe for all samples 
-fullpath<-paste(path,count_files[1],sep='/') 
-df <- data.frame(read.table(fullpath,sep="\t",header=T)[,c(1,7)])
+fullpath<-paste(path,count_files[1],sep='/')
+count.matrix <- data.frame(read.table(fullpath,sep="\t",header=T)[,c(1,7,8)])
 for(i in 2:length(count_files)){
-  fullpath<-paste(path,count_files[i],sep='/') 
-  samp_df <- read.table(fullpath,sep="\t",header=T)[,c(1,7)]
-  df<- merge(df,samp_df,by="Geneid",all=TRUE)
+  fullpath<-paste(path,count_files[i],sep='/')
+  samp_df <- read.table(fullpath,sep="\t",header=T)[,c(1,8)]
+  count.matrix<- merge(count.matrix,samp_df,by="Geneid",all=TRUE)
 }
-countTab <- df[,-1]
-rownames(countTab) <- df[,1]
+countTab <- count.matrix[,-1]
+rownames(countTab) <- count.matrix[,1]
+countTab <- aggregate(. ~ gene_id, data=countTab, FUN=sum)
 sampInfo<-read.csv(args[2],row.names=1)
 all(rownames(sampInfo) %in% colnames(countTab))
 all(rownames(sampInfo) == colnames(countTab))
