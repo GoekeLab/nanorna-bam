@@ -117,7 +117,8 @@ process CheckSampleSheet {
     file samplesheet from ch_input
 
     output:
-    file "*.csv" into ch_samplesheet_reformat
+    file "*reformat.csv" into ch_samplesheet_reformat
+    file "*conditions.csv" into ch_sample_condition
 
     script:
     """
@@ -159,6 +160,7 @@ ch_sample_condition
     .map {it -> it.size()}
     .into { ch_deseq2_num_condition;
             ch_dexseq_num_condition}
+
 /*
  * STEP 2 - StringTie2
  */
@@ -203,8 +205,8 @@ ch_annot_feature_count
      output:
      file("*.txt") into ch_counts
      file("*.version") into ch_feat_counts_version
-     val "results/featureCounts_transcript" into ch_deseq2_indir
-     val "results/featureCounts_transcript" into ch_dexseq_indir
+     val "mod/featureCounts_transcript" into ch_deseq2_indir
+     val "mod/featureCounts_transcript" into ch_dexseq_indir
 
      script:
      txome_recon = (annot =~ /\.out\.gtf/) ? ".tx_recon" : ""
@@ -231,7 +233,7 @@ process DESeq2 {
   file DESeq2script from ch_DEscript
   val indir from ch_deseq2_indir
   val num_condition from ch_deseq2_num_condition
-  
+
   output:
   file "*.txt" into ch_DEout
 
@@ -261,10 +263,10 @@ process DEXseq {
   file DEXscript from ch_DEXscript
   val indir from ch_dexseq_indir
   val num_condition from ch_dexseq_num_condition
-  
+
   output:
   file "*.txt" into ch_DEXout
-  
+
   when:
   num_condition >= 2
 
