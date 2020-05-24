@@ -88,6 +88,7 @@ while True:
         else:
             print("{}: Annotation file not specified!\nLine: '{}'".format(ERROR_STR,line.strip()))
             sys.exit(1)
+        ## CHECK CONDITION ENTRIES
         if condition:
             if condition not in condition_list:
                 condition_list.append(condition)
@@ -103,3 +104,5 @@ fout.write(','.join(['sample', 'bam', 'annotation']) + '\n')
 for line in outLines:
     fout.write(','.join(line) + '\n')
 fout.close()
+outfile=open("total_conditions.csv","w")
+outfile.write(",".join(condition_list)+"\n")
