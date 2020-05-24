@@ -154,7 +154,11 @@ ch_samplesheet_reformat
     .map { it -> [ it[0], it[1], it[2] ] } // [samplename, bam, annotations]
     .into { ch_txome_reconstruction;
             ch_annot_feature_count}
-
+ch_sample_condition
+    .splitCsv(header:false, sep:',')
+    .map {it -> it.size()}
+    .into { ch_deseq2_num_condition;
+            ch_dexseq_num_condition}
 /*
  * STEP 2 - StringTie2
  */
@@ -226,10 +230,13 @@ process DESeq2 {
   file sampleinfo from ch_input
   file DESeq2script from ch_DEscript
   val indir from ch_deseq2_indir
-
+  val num_condition from ch_deseq2_num_condition
+  
   output:
   file "*.txt" into ch_DEout
 
+  when:
+  num_condition >= 2
 
   script:
   """
@@ -253,9 +260,13 @@ process DEXseq {
   file sampleinfo from ch_input
   file DEXscript from ch_DEXscript
   val indir from ch_dexseq_indir
-
+  val num_condition from ch_dexseq_num_condition
+  
   output:
   file "*.txt" into ch_DEXout
+  
+  when:
+  num_condition >= 2
 
   script:
   """
