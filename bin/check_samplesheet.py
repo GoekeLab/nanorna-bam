@@ -43,7 +43,7 @@ if header != HEADER:
     print("{} header: {} != {}".format(ERROR_STR,','.join(header),','.join(HEADER)))
     sys.exit(1)
 
-outLines = []
+outLines,condition_list = [],[]
 while True:
     line = fin.readline()
     if line:
