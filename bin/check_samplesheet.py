@@ -88,6 +88,9 @@ while True:
         else:
             print("{}: Annotation file not specified!\nLine: '{}'".format(ERROR_STR,line.strip()))
             sys.exit(1)
+        if condition:
+            if condition not in condition_list:
+                condition_list.append(condition)
 
         outLines.append([sample,bam,annotation])
     else:
