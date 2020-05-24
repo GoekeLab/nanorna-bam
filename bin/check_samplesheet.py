@@ -47,8 +47,8 @@ outLines,condition_list = [],[]
 while True:
     line = fin.readline()
     if line:
-        lspl = [x.strip() for x in line.strip().split(',')][:-1]
-        sample,bam, annotation = lspl
+        lspl = [x.strip() for x in line.strip().split(',')]
+        sample,bam, annotation, condition = lspl
 
         ## CHECK VALID NUMBER OF COLUMNS PER SAMPLE
         numCols = len([x for x in lspl if x])
