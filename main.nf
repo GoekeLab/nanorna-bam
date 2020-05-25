@@ -176,7 +176,7 @@ process StringTie2 {
     set val(name), file(bam) into ch_txome_feature_count
     val annot into ch_annot
     file("*.version") into ch_stringtie_version
-    val "results/stringtie2" into ch_stringtie_outputs
+    val "${params.outdir}/stringtie2" into ch_stringtie_outputs
     file "*.out.gtf"
 
     script:
@@ -231,8 +231,8 @@ ch_txome_feature_count
      output:
      file("*.txt") into ch_counts
      file("*.version") into ch_feat_counts_version
-     val "results/featureCounts_transcript" into ch_deseq2_indir
-     val "results/featureCounts_transcript" into ch_dexseq_indir
+     val "${params.outdir}/featureCounts_transcript" into ch_deseq2_indir
+     val "${params.outdir}/featureCounts_transcript" into ch_dexseq_indir
 
      script:
      """
@@ -244,7 +244,7 @@ ch_txome_feature_count
 /*
  * STEP 4 - DESeq2
  */
-params.DEscript= "bin/runDESeq2.R"
+params.DEscript= "$baseDir/bin/runDESeq2.R"
 ch_DEscript = Channel.fromPath("$params.DEscript", checkIfExists:true)
 
 process DESeq2 {
@@ -274,7 +274,7 @@ process DESeq2 {
 /*
  * STEP 5 - DEXseq
  */
-params.DEXscript= "bin/runDEXseq.R"
+params.DEXscript= "$baseDir/bin/runDEXseq.R"
 ch_DEXscript = Channel.fromPath("$params.DEXscript", checkIfExists:true)
 
 process DEXseq {
