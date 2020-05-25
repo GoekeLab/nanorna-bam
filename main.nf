@@ -153,8 +153,7 @@ ch_samplesheet_reformat
     .splitCsv(header:true, sep:',')
     .map { get_sample_info(it, params.genomes) }
     .map { it -> [ it[0], it[1], it[2] ] } // [samplename, bam, annotations]
-    .into { ch_txome_reconstruction;
-            ch_annot_feature_count}
+    .set { ch_txome_reconstruction}
 ch_sample_condition
     .splitCsv(header:false, sep:',')
     .map {it -> it.size()}
@@ -171,11 +170,14 @@ process StringTie2 {
                 }
 
     input:
-    set val(name), file(bam), file(annot) from ch_txome_reconstruction
+    set val(name), file(bam), val(annot) from ch_txome_reconstruction
 
     output:
-    set val(name), file(bam), file("*.out.gtf") into ch_txome_feature_count
+    set val(name), file(bam) into ch_txome_feature_count
+    val annot into ch_annot
     file("*.version") into ch_stringtie_version
+    val "results/stringtie2" into ch_stringtie_outputs
+    file "*.out.gtf"
 
     script:
     """
@@ -183,12 +185,36 @@ process StringTie2 {
     stringtie --version &> stringtie.version
     """
 }
+ch_stringtie_outputs
+   .unique()
+   .set {ch_stringtie_dir}
+ch_annot
+   .unique()
+   .set{ch_annotation}
 
-// Combine channels for feature count with gtf from transcriptome reconstruction
-ch_annot_feature_count
-    .concat(ch_txome_feature_count)
-    .set{ ch_feature_count }
+process MergeGTFs {
+    publishDir "${params.outdir}/stringtie2", mode: 'copy',
+        saveAs: { filename ->
+                      if (!filename.endsWith(".version")) filename
+                }
+    input:
+    val stringtie_dir from ch_stringtie_dir
+    val annot from ch_annotation
 
+    output:
+    val "$stringtie_dir/merged.gtf" into ch_merged_gtf
+
+    script:
+    """
+    ls -d -1 $PWD/$stringtie_dir/*.out.gtf > $PWD/$stringtie_dir/gtf_list.txt
+    echo "$annot" >> $PWD/$stringtie_dir/gtf_list.txt
+    mergeGTF.py $PWD/$stringtie_dir/gtf_list.txt $PWD/$stringtie_dir/merged.gtf
+    """
+}
+
+ch_txome_feature_count
+   .combine(ch_merged_gtf)
+   .set {ch_feature_count}
 
 /*
  * STEP 3 - FeatureCounts
@@ -200,7 +226,7 @@ ch_annot_feature_count
                  }
 
      input:
-     set val(name), file(bam), file(annot) from ch_feature_count
+     set val(name), file(bam), val(annot) from ch_feature_count
 
      output:
      file("*.txt") into ch_counts
@@ -209,9 +235,8 @@ ch_annot_feature_count
      val "results/featureCounts_transcript" into ch_dexseq_indir
 
      script:
-     txome_recon = (annot =~ /\.out\.gtf/) ? ".tx_recon" : ""
      """
-     featureCounts -g transcript_id --extraAttributes gene_id  -T $task.cpus -a $annot -o ${name}${txome_recon}.transcript_counts.txt $bam
+     featureCounts -g transcript_id --extraAttributes gene_id  -T $task.cpus -a $PWD/$annot -o ${name}.transcript_counts.txt $bam
      featureCounts -v &> featureCounts.version
      """
  }
