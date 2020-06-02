@@ -49,7 +49,7 @@ if (params.help){
 }
 
 if (params.input) { ch_input = file(params.input, checkIfExists: true) } else { exit 1, "Samplesheet file not specified!" }
-
+if (params.transcriptquant) {ch_transcriptquant = params.transcriptquant}
 
 // Has the run name been specified by the user?
 //  this has the bonus effect of catching both -name and --name
@@ -161,7 +161,7 @@ ch_sample_condition
             ch_dexseq_num_condition}
 
 /*
- * STEP 2 - StringTie2
+ * STEP 2a - StringTie2 & FeatureCounts
  */
 process StringTie2 {
     publishDir "${params.outdir}/stringtie2", mode: 'copy',
@@ -171,6 +171,7 @@ process StringTie2 {
 
     input:
     set val(name), file(bam), val(annot) from ch_txome_reconstruction
+    val transcriptquant from ch_transcriptquant
 
     output:
     set val(name), file(bam) into ch_txome_feature_count
@@ -178,6 +179,9 @@ process StringTie2 {
     file("*.version") into ch_stringtie_version
     val "${params.outdir}/stringtie2" into ch_stringtie_outputs
     file "*.out.gtf"
+
+    when:
+    transcriptquant == "stringtie"
 
     script:
     """
@@ -200,9 +204,13 @@ process MergeGTFs {
     input:
     val stringtie_dir from ch_stringtie_dir
     val annot from ch_annotation
+    val transcriptquant from ch_transcriptquant
 
     output:
     val "$stringtie_dir/merged.gtf" into ch_merged_gtf
+
+    when:
+    transcriptquant == "stringtie"
 
     script:
     """
@@ -216,10 +224,7 @@ ch_txome_feature_count
    .combine(ch_merged_gtf)
    .set {ch_feature_count}
 
-/*
- * STEP 3 - FeatureCounts
- */
- process FeatureCounts {
+process FeatureCounts {
      publishDir "${params.outdir}/featureCounts_transcript", mode: 'copy',
          saveAs: { filename ->
                  if (!filename.endsWith(".version")) filename
@@ -227,12 +232,16 @@ ch_txome_feature_count
 
      input:
      set val(name), file(bam), val(annot) from ch_feature_count
+     val transcriptquant from ch_transcriptquant
 
      output:
      file("*.txt") into ch_counts
      file("*.version") into ch_feat_counts_version
      val "${params.outdir}/featureCounts_transcript" into ch_deseq2_indir
      val "${params.outdir}/featureCounts_transcript" into ch_dexseq_indir
+
+     when:
+     transcriptquant == "stringtie"
 
      script:
      """
@@ -242,7 +251,37 @@ ch_txome_feature_count
  }
 
 /*
- * STEP 4 - DESeq2
+ * STEP 2b - Bambu
+ */
+params.Bambuscript= "$baseDir/bin/runBambu.R"
+ch_Bambuscript = Channel.fromPath("$params.Bambuscript", checkIfExists:true)
+
+process Bambu {
+  publishDir "${params.outdir}/Bambu", mode: 'copy',
+        saveAs: { filename ->
+                      if (!filename.endsWith(".version")) filename
+                }
+
+  input:
+  file Bambuscript from ch_Bambuscript
+  file sampleinfo from ch_input
+  val transcriptquant from ch_transcriptquant
+
+  output:
+  val "${params.outdir}/counts_gene.txt" into ch_deseq2_in
+  val "${params.outdir}/counts_transcript.txt" into ch_dexseq_in
+
+  when:
+  transcriptquant == "bambu"
+
+  script:
+  """
+  Rscript --vanilla $Bambuscript $PWD $sampleinfo $PWD/results/Bambu/
+  """
+}
+
+/*
+ * STEP 3 - DESeq2
  */
 params.DEscript= "$baseDir/bin/runDESeq2.R"
 ch_DEscript = Channel.fromPath("$params.DEscript", checkIfExists:true)
@@ -272,7 +311,7 @@ process DESeq2 {
 }
 
 /*
- * STEP 5 - DEXseq
+ * STEP 4 - DEXseq
  */
 params.DEXscript= "$baseDir/bin/runDEXseq.R"
 ch_DEXscript = Channel.fromPath("$params.DEXscript", checkIfExists:true)
