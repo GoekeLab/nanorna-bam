@@ -214,6 +214,7 @@ process MergeGTFs {
 
     script:
     """
+    chmod 755 $baseDir/bin/mergeGTF.py 
     ls -d -1 $PWD/$stringtie_dir/*.out.gtf > $PWD/$stringtie_dir/gtf_list.txt
     echo "$annot" >> $PWD/$stringtie_dir/gtf_list.txt
     mergeGTF.py $PWD/$stringtie_dir/gtf_list.txt $PWD/$stringtie_dir/merged.gtf
