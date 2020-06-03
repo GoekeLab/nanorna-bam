@@ -49,7 +49,7 @@ if (params.help){
 }
 
 if (params.input) { ch_input = file(params.input, checkIfExists: true) } else { exit 1, "Samplesheet file not specified!" }
-if (params.transcriptquant) {ch_transcriptquant = params.transcriptquant}
+ch_transcriptquant = params.transcriptquant
 
 // Has the run name been specified by the user?
 //  this has the bonus effect of catching both -name and --name
@@ -238,8 +238,8 @@ process FeatureCounts {
      output:
      file("*.txt") into ch_counts
      file("*.version") into ch_feat_counts_version
-     val "${params.outdir}/featureCounts_transcript" into ch_deseq2_indir
-     val "${params.outdir}/featureCounts_transcript" into ch_dexseq_indir
+     val "mod/featureCounts_transcript" into ch_deseq2_indir
+     val "mod/featureCounts_transcript" into ch_dexseq_indir
 
      when:
      transcriptquant == "stringtie"
@@ -269,8 +269,8 @@ process Bambu {
   val transcriptquant from ch_transcriptquant
 
   output:
-  val "${params.outdir}/counts_gene.txt" into ch_deseq2_in
-  val "${params.outdir}/counts_transcript.txt" into ch_dexseq_in
+  val "$baseDir/results/Bambu/counts_gene.txt" into ch_deseq2_in
+  val "$baseDir/results/Bambu/counts_transcript.txt" into ch_dexseq_in
 
   when:
   transcriptquant == "bambu"
@@ -279,6 +279,11 @@ process Bambu {
   """
   Rscript --vanilla $Bambuscript $PWD $sampleinfo $PWD/results/Bambu/
   """
+}
+
+if( ch_transcriptquant == "stringtie"){
+  ch_deseq2_in = ch_deseq2_indir
+  ch_dexseq_in = ch_dexseq_indir
 }
 
 /*
@@ -296,8 +301,9 @@ process DESeq2 {
   input:
   file sampleinfo from ch_input
   file DESeq2script from ch_DEscript
-  val indir from ch_deseq2_indir
+  val inpath from ch_deseq2_in
   val num_condition from ch_deseq2_num_condition
+  val transcriptquant from ch_transcriptquant
 
   output:
   file "*.txt" into ch_DEout
@@ -307,7 +313,7 @@ process DESeq2 {
 
   script:
   """
-  Rscript --vanilla $DESeq2script ${PWD}/$indir $sampleinfo
+  Rscript --vanilla $DESeq2script $transcriptquant $inpath $sampleinfo 
   """
 }
 
@@ -326,8 +332,9 @@ process DEXseq {
   input:
   file sampleinfo from ch_input
   file DEXscript from ch_DEXscript
-  val indir from ch_dexseq_indir
+  val inpath from ch_dexseq_in
   val num_condition from ch_dexseq_num_condition
+  val transcriptquant from ch_transcriptquant
 
   output:
   file "*.txt" into ch_DEXout
@@ -337,7 +344,7 @@ process DEXseq {
 
   script:
   """
-  Rscript --vanilla $DEXscript ${PWD}/$indir $sampleinfo
+  Rscript --vanilla $DEXscript $transcriptquant $inpath $sampleinfo
   """
 }
 
