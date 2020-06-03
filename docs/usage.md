@@ -37,6 +37,7 @@
   * [`--plaintext_email`](#--plaintext_email)
   * [`--monochrome_logs`](#--monochrome_logs)
   * [`--multiqc_config`](#--multiqc_config)
+  * [`--transcriptquant`](#--transcriptquant)
 <!-- TOC END -->
 
 
@@ -255,3 +256,6 @@ Set to disable colourful command line output and live life in monochrome.
 
 ### `--multiqc_config`
 Specify a path to a custom MultiQC configuration file.
+
+### `--transcriptquant`
+Specify the transcript quantification method: stringtie or bambu (default).
