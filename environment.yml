@@ -9,6 +9,7 @@ dependencies:
   # TODO nf-core: Add required software dependencies here
   - fastqc=0.11.8
   - multiqc=1.7
+  - gffcompare=0.11.2
   - r-base=4.0.0
   - bioconductor-deseq2=1.28.0
   - bioconductor-drimseq=1.16.0
