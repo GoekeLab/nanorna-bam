@@ -41,7 +41,6 @@ if (identical(transcriptquant,"stringtie") == TRUE){
 
 #sampInfo <- read.csv("~/Downloads/nanorna-bam-master/two_conditions.csv",row.names = 1)
 sampInfo<-read.csv(args[3],row.names=1)
-countTab <- data.frame(read.table("~/Downloads/nanorna-bam-master/results/Bambu/counts_gene.txt"))
 #all(rownames(sampInfo) %in% colnames(countTab))
 #all(rownames(sampInfo) == colnames(countTab))
 dds <- DESeqDataSetFromMatrix(countData = countTab,colData = sampInfo,design = ~ condition)
