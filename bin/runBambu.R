@@ -7,11 +7,13 @@ if (!require("BSgenome.Hsapiens.NCBI.GRCh38")){
     BiocManager::install("BSgenome.Hsapiens.NCBI.GRCh38",update = FALSE, ask= FALSE)
     library(BSgenome.Hsapiens.NCBI.GRCh38)
 }
-if (!requireNamespace("devtools", quietly = TRUE)){
+if (!require("bambu")){
+  if (!requireNamespace("devtools", quietly = TRUE)){
     install.packages("devtools", repos='http://cran.us.r-project.org')
+  devtools::install_github("GoekeLab/bambu")
+  library(bambu)
+  }
 }
-devtools::install_github("GoekeLab/bambu")
-library(bambu)
 
 args = commandArgs(trailingOnly=TRUE)
 if (length(args) < 2) {
