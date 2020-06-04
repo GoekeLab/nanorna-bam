@@ -196,7 +196,7 @@ ch_annot
    .unique()
    .set{ch_annotation}
 
-process MergeGTFs {
+process GffCompare {
     publishDir "${params.outdir}/stringtie2", mode: 'copy',
         saveAs: { filename ->
                       if (!filename.endsWith(".version")) filename
@@ -207,17 +207,17 @@ process MergeGTFs {
     val transcriptquant from ch_transcriptquant
 
     output:
-    val "$stringtie_dir/merged.gtf" into ch_merged_gtf
+    val "$stringtie_dir/merged.combined.gtf" into ch_merged_gtf
 
     when:
     transcriptquant == "stringtie"
 
     script:
     """
-    chmod 755 $baseDir/bin/mergeGTF.py 
     ls -d -1 $PWD/$stringtie_dir/*.out.gtf > $PWD/$stringtie_dir/gtf_list.txt
     echo "$annot" >> $PWD/$stringtie_dir/gtf_list.txt
-    mergeGTF.py $PWD/$stringtie_dir/gtf_list.txt $PWD/$stringtie_dir/merged.gtf
+    gffcompare -i $PWD/$stringtie_dir/gtf_list.txt -o $PWD/$stringtie_dir/merged
+    gffcompare --version &> gffcompare.version
     """
 }
 
