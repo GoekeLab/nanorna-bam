@@ -21,13 +21,15 @@ if (length(args) < 3) {
     BiocManager::install("BSgenome.Hsapiens.NCBI.GRCh38",update = FALSE, ask= FALSE)
     library(BSgenome.Hsapiens.NCBI.GRCh38)
   }
-  genomeseq <- BSgenome.Hsapiens.NCBI.GRCh38  #use BSgenome if fasta file is not provided
+  genomeseq <- "BSgenome.Hsapiens.NCBI.GRCh38"  #use BSgenome if fasta file is not provided
+} else {
+  genomeseq <- args[4]
 }
+
 pwd <- args[1]
 sampInfo <- read.table(args[2], header = TRUE, sep=",")
 annotation_list <- unique(sampInfo$annotation)
 output_tag <- args[3]
-genomeseq <- args[4]
 for(i in 1:length(annotation_list)){
     readlist <- sampInfo[sampInfo$annotation %in% annotation_list[i]]$bam
     annot_gtf <- paste(pwd,annotation_list[i],sep="/")
