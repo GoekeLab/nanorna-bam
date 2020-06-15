@@ -34,7 +34,7 @@ args = argParser.parse_args()
 ############################################
 
 ERROR_STR = 'ERROR: Please check samplesheet'
-HEADER = ['sample', 'bam', 'annotation', 'condition']
+HEADER = ['sample', 'bam', 'genome', 'transcriptome', 'condition']
 
 ## CHECK HEADER
 fin = open(args.DESIGN_FILE_IN,'r')
@@ -48,7 +48,7 @@ while True:
     line = fin.readline()
     if line:
         lspl = [x.strip() for x in line.strip().split(',')]
-        sample,bam, annotation, condition = lspl
+        sample, bam, genome, transcriptome, condition = lspl
 
         ## CHECK VALID NUMBER OF COLUMNS PER SAMPLE
         numCols = len([x for x in lspl if x])
@@ -74,35 +74,51 @@ while True:
             print("{}: BAM file not specified!\nLine: '{}'".format(ERROR_STR,line.strip()))
             sys.exit(1)
 
-        ## CHECK ANNOTATION ENTRIES
-        if annotation:
-            if annotation.find(' ') != -1:
-                print("{}: Annotation field contains spaces!\nLine: '{}'".format(ERROR_STR,line.strip()))
+        ## CHECK GENOME ENTRIES
+        if genome:
+            if genome.find(' ') != -1:
+                print("Genome entry contains spaces!",line)
                 sys.exit(1)
 
-            if len(annotation.split('.')) > 1:
-                if annotation[-4:] != '.gtf' and annotation[-4:] != '.gff' and annotation[-7:] != '.gtf.gz' and annotation[-7:] != '.gff.gz':
-                    print("{}: Annotation field has incorrect extension (has to be '.gtf', '.gff', '.gtf.gz' or '.gff.gz')!\nLine: '{}'".format(ERROR_STR,line.strip()))
+            if len(genome.split('.')) > 1:
+                if genome[-6:] != '.fasta' and genome[-3:] != '.fa' and genome[-9:] != '.fasta.gz' and genome[-6:] != '.fa.gz':
+                    print("Genome entry does not have extension '.fasta', '.fa', '.fasta.gz' or '.fa.gz'!",line)
                     sys.exit(1)
 
-        else:
-            print("{}: Annotation file not specified!\nLine: '{}'".format(ERROR_STR,line.strip()))
-            sys.exit(1)
+        ## CHECK TRANSCRIPTOME ENTRIES
+        gtf = ''
+        if transcriptome:
+            if transcriptome.find(' ') != -1:
+                print("Transcriptome entry contains spaces!",line)
+                sys.exit(1)
+
+            if transcriptome[-6:] != '.fasta' and transcriptome[-3:] != '.fa' and transcriptome[-9:] != '.fasta.gz' and transcriptome[-6:] != '.fa.gz' and transcriptome[-4:] != '.gtf' and transcriptome[-7:] != '.gtf.gz':
+                print("Transcriptome entry does not have extension '.fasta', '.fa', '.fasta.gz', '.fa.gz', '.gtf' or '.gtf.gz'!",line)
+                sys.exit(1)
+
+            if transcriptome[-4:] == '.gtf' or transcriptome[-7:] == '.gtf.gz':
+                gtf = transcriptome
+                if not genome:
+                    print("If genome isn't provided, transcriptome must be in fasta format for mapping!",line)
+                    sys.exit(1)
+            
         ## CHECK CONDITION ENTRIES
         if condition:
             if condition not in condition_list:
                 condition_list.append(condition)
 
-        outLines.append([sample,bam,annotation])
+        outLines.append([sample,bam,genome,transcriptome])
     else:
         fin.close()
         break
 
 ## WRITE TO FILE
 fout = open(args.DESIGN_FILE_OUT,'w')
-fout.write(','.join(['sample', 'bam', 'annotation']) + '\n')
+fout.write(','.join(['sample', 'bam', 'genome', 'transcriptome', 'is_transcripts']) + '\n')
 for line in outLines:
+    print(line)
     fout.write(','.join(line) + '\n')
 fout.close()
+
 outfile=open("total_conditions.csv","w")
 outfile.write(",".join(condition_list)+"\n")
