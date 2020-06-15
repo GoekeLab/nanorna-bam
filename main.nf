@@ -133,27 +133,31 @@ process CheckSampleSheet {
 def get_sample_info(LinkedHashMap sample, LinkedHashMap genomeMap) {
 
     // Resolve gtf file if using iGenomes
+    def fasta = false
     def gtf = false
-    if (sample.annotation) {
-        if (genomeMap.containsKey(sample.annotation)) {
-            gtf = file(genomeMap[sample.annotation].gtf, checkIfExists: true)
+    if (sample.genome) {
+        if (genomeMap.containsKey(sample.genome)) {
+	    fasta = file(genomeMap[sample.genome].fa, checkIfExists: true)
+            gtf = file(genomeMap[sample.genome].gtf, checkIfExists: true)
         } else {
-            gtf = file(sample.annotation, checkIfExists: true)
+            fasta = file(sample.genome, checkIfExists: true)
+            gtf = file(sample.transcriptome, checkIfExists: true)
         }
     }
 
     // Check if bam file exists
     bam = file(sample.bam, checkIfExists: true)
 
-    return [ sample.sample, bam, gtf ]
+    return [ sample.sample, bam, fasta, gtf]
 }
 
 // Sort the samplesheet entries into correct channels
 ch_samplesheet_reformat
     .splitCsv(header:true, sep:',')
     .map { get_sample_info(it, params.genomes) }
-    .map { it -> [ it[0], it[1], it[2] ] } // [samplename, bam, annotations]
-    .set { ch_txome_reconstruction}
+    .map { it -> [ it[0], it[1], it[2], it[3] ] } // [samplename, bam, gtf, fasta]
+    .into { ch_txome_reconstruction;
+           ch_bambu_input}
 ch_sample_condition
     .splitCsv(header:false, sep:',')
     .map {it -> it.size()}
@@ -170,7 +174,7 @@ process StringTie2 {
                 }
 
     input:
-    set val(name), file(bam), val(annot) from ch_txome_reconstruction
+    set val(name), file(bam), val(genomeseq), val(annot) from ch_txome_reconstruction
     val transcriptquant from ch_transcriptquant
 
     output:
@@ -264,6 +268,7 @@ process Bambu {
                 }
 
   input:
+  set val(name), file(bam), val(genomeseq), val(annot) from ch_bambu_input
   file Bambuscript from ch_Bambuscript
   file sampleinfo from ch_input
   val transcriptquant from ch_transcriptquant
@@ -277,7 +282,7 @@ process Bambu {
 
   script:
   """
-  Rscript --vanilla $Bambuscript $PWD $sampleinfo $PWD/results/Bambu/
+  Rscript --vanilla $Bambuscript $PWD $sampleinfo $PWD/results/Bambu/ $genomeseq
   """
 }
 
