@@ -28,10 +28,10 @@ if (length(args) < 3) {
 
 pwd <- args[1]
 sampInfo <- read.table(args[2], header = TRUE, sep=",")
-annotation_list <- unique(sampInfo$annotation)
+annotation_list <- unique(sampInfo$transcriptome)
 output_tag <- args[3]
 for(i in 1:length(annotation_list)){
-    readlist <- sampInfo[sampInfo$annotation %in% annotation_list[i]]$bam
+    readlist <- sampInfo[sampInfo$transcriptome %in% annotation_list[i]]$bam
     annot_gtf <- paste(pwd,annotation_list[i],sep="/")
     readlist <- paste(pwd,readlist,sep="/")
     grlist <- prepareAnnotationsFromGTF(annot_gtf)
