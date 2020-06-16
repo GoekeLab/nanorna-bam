@@ -137,7 +137,7 @@ def get_sample_info(LinkedHashMap sample, LinkedHashMap genomeMap) {
     def gtf = false
     if (sample.genome) {
         if (genomeMap.containsKey(sample.genome)) {
-            fasta = file(genomeMap[sample.genome].fasta, checkIfExists: true)
+	    fasta = file(genomeMap[sample.genome].fasta, checkIfExists: true)
             gtf = file(genomeMap[sample.genome].gtf, checkIfExists: true)
         } else {
             fasta = file(sample.genome, checkIfExists: true)
@@ -174,12 +174,12 @@ process StringTie2 {
                 }
 
     input:
-    set val(name), file(bam), val(genomeseq), val(annot) from ch_txome_reconstruction
+    set val(name), file(bam), val(genomeseq), file(annot) from ch_txome_reconstruction
     val transcriptquant from ch_transcriptquant
 
     output:
     set val(name), file(bam) into ch_txome_feature_count
-    val annot into ch_annot
+    file annot into ch_annot
     file("*.version") into ch_stringtie_version
     val "${params.outdir}/stringtie2" into ch_stringtie_outputs
     file "*.out.gtf"
@@ -207,7 +207,7 @@ process GffCompare {
                 }
     input:
     val stringtie_dir from ch_stringtie_dir
-    val annot from ch_annotation
+    file annot from ch_annotation
     val transcriptquant from ch_transcriptquant
 
     output:
