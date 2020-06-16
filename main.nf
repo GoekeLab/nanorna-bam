@@ -282,7 +282,7 @@ process Bambu {
 
   script:
   """
-  Rscript --vanilla $Bambuscript $PWD $sampleinfo $PWD/results/Bambu/ $genomeseq
+  Rscript --vanilla $Bambuscript $PWD $sampleinfo $PWD/results/Bambu/ $annot $genomeseq
   """
 }
 
