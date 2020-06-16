@@ -268,7 +268,7 @@ process Bambu {
                 }
 
   input:
-  set val(name), file(bam), val(genomeseq), val(annot) from ch_bambu_input
+  set val(name), file(bam), file(genomeseq), file(annot) from ch_bambu_input
   file Bambuscript from ch_Bambuscript
   file sampleinfo from ch_input
   val transcriptquant from ch_transcriptquant
