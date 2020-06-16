@@ -137,7 +137,7 @@ def get_sample_info(LinkedHashMap sample, LinkedHashMap genomeMap) {
     def gtf = false
     if (sample.genome) {
         if (genomeMap.containsKey(sample.genome)) {
-	    fasta = file(genomeMap[sample.genome].fa, checkIfExists: true)
+            fasta = file(genomeMap[sample.genome].fasta, checkIfExists: true)
             gtf = file(genomeMap[sample.genome].gtf, checkIfExists: true)
         } else {
             fasta = file(sample.genome, checkIfExists: true)
