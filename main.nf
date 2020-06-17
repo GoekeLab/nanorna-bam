@@ -242,8 +242,8 @@ process FeatureCounts {
      output:
      file("*.txt") into ch_counts
      file("*.version") into ch_feat_counts_version
-     val "$baseDir/results/featureCounts_transcript" into ch_deseq2_indir
-     val "$baseDir/results/featureCounts_transcript" into ch_dexseq_indir
+     val "${params.outdir}/featureCounts_transcript" into ch_deseq2_indir
+     val "${params.outdir}/featureCounts_transcript" into ch_dexseq_indir
 
      when:
      transcriptquant == "stringtie"
@@ -274,8 +274,8 @@ process Bambu {
   val transcriptquant from ch_transcriptquant
 
   output:
-  val "$baseDir/results/Bambu/counts_gene.txt" into ch_deseq2_in
-  val "$baseDir/results/Bambu/counts_transcript.txt" into ch_dexseq_in
+  val "${params.outdir}/Bambu/counts_gene.txt" into ch_deseq2_in
+  val "${params.outdir}/Bambu/counts_transcript.txt" into ch_dexseq_in
 
   when:
   transcriptquant == "bambu"
