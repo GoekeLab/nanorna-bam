@@ -49,7 +49,7 @@ if (params.help){
 }
 
 if (params.input) { ch_input = file(params.input, checkIfExists: true) } else { exit 1, "Samplesheet file not specified!" }
-
+ch_transcriptquant = params.transcriptquant
 
 // Has the run name been specified by the user?
 //  this has the bonus effect of catching both -name and --name
@@ -117,7 +117,8 @@ process CheckSampleSheet {
     file samplesheet from ch_input
 
     output:
-    file "*.csv" into ch_samplesheet_reformat
+    file "*reformat.csv" into ch_samplesheet_reformat
+    file "*conditions.csv" into ch_sample_condition
 
     script:
     """
@@ -132,31 +133,39 @@ process CheckSampleSheet {
 def get_sample_info(LinkedHashMap sample, LinkedHashMap genomeMap) {
 
     // Resolve gtf file if using iGenomes
+    def fasta = false
     def gtf = false
-    if (sample.annotation) {
-        if (genomeMap.containsKey(sample.annotation)) {
-            gtf = file(genomeMap[sample.annotation].gtf, checkIfExists: true)
+    if (sample.genome) {
+        if (genomeMap.containsKey(sample.genome)) {
+	    fasta = file(genomeMap[sample.genome].fasta, checkIfExists: true)
+            gtf = file(genomeMap[sample.genome].gtf, checkIfExists: true)
         } else {
-            gtf = file(sample.annotation, checkIfExists: true)
+            fasta = file(sample.genome, checkIfExists: true)
+            gtf = file(sample.transcriptome, checkIfExists: true)
         }
     }
 
     // Check if bam file exists
     bam = file(sample.bam, checkIfExists: true)
 
-    return [ sample.sample, bam, gtf ]
+    return [ sample.sample, bam, fasta, gtf]
 }
 
 // Sort the samplesheet entries into correct channels
 ch_samplesheet_reformat
     .splitCsv(header:true, sep:',')
     .map { get_sample_info(it, params.genomes) }
-    .map { it -> [ it[0], it[1], it[2] ] } // [samplename, bam, annotations]
+    .map { it -> [ it[0], it[1], it[2], it[3] ] } // [samplename, bam, gtf, fasta]
     .into { ch_txome_reconstruction;
-            ch_annot_feature_count}
+           ch_bambu_input}
+ch_sample_condition
+    .splitCsv(header:false, sep:',')
+    .map {it -> it.size()}
+    .into { ch_deseq2_num_condition;
+            ch_dexseq_num_condition}
 
 /*
- * STEP 2 - StringTie2
+ * STEP 2a - StringTie2 & FeatureCounts
  */
 process StringTie2 {
     publishDir "${params.outdir}/stringtie2", mode: 'copy',
@@ -165,11 +174,18 @@ process StringTie2 {
                 }
 
     input:
-    set val(name), file(bam), file(annot) from ch_txome_reconstruction
+    set val(name), file(bam), val(genomeseq), file(annot) from ch_txome_reconstruction
+    val transcriptquant from ch_transcriptquant
 
     output:
-    set val(name), file(bam), file("*.out.gtf") into ch_txome_feature_count
+    set val(name), file(bam) into ch_txome_feature_count
+    file annot into ch_annot
     file("*.version") into ch_stringtie_version
+    val "${params.outdir}/stringtie2" into ch_stringtie_outputs
+    file "*.out.gtf"
+
+    when:
+    transcriptquant == "stringtie"
 
     script:
     """
@@ -177,46 +193,106 @@ process StringTie2 {
     stringtie --version &> stringtie.version
     """
 }
+ch_stringtie_outputs
+   .unique()
+   .set {ch_stringtie_dir}
+ch_annot
+   .unique()
+   .set{ch_annotation}
 
-// Combine channels for feature count with gtf from transcriptome reconstruction
-ch_annot_feature_count
-    .concat(ch_txome_feature_count)
-    .set{ ch_feature_count }
+process GffCompare {
+    publishDir "${params.outdir}/stringtie2", mode: 'copy',
+        saveAs: { filename ->
+                      if (!filename.endsWith(".version")) filename
+                }
+    input:
+    val stringtie_dir from ch_stringtie_dir
+    file annot from ch_annotation
+    val transcriptquant from ch_transcriptquant
 
+    output:
+    val "$stringtie_dir/merged.combined.gtf" into ch_merged_gtf
 
-/*
- * STEP 3 - FeatureCounts
- */
- process FeatureCounts {
+    when:
+    transcriptquant == "stringtie"
+
+    script:
+    """
+    ls -d -1 $PWD/$stringtie_dir/*.out.gtf > $PWD/$stringtie_dir/gtf_list.txt
+    echo "$annot" >> $PWD/$stringtie_dir/gtf_list.txt
+    gffcompare -i $PWD/$stringtie_dir/gtf_list.txt -o $PWD/$stringtie_dir/merged
+    gffcompare --version &> gffcompare.version
+    """
+}
+
+ch_txome_feature_count
+   .combine(ch_merged_gtf)
+   .set {ch_feature_count}
+
+process FeatureCounts {
      publishDir "${params.outdir}/featureCounts_transcript", mode: 'copy',
          saveAs: { filename ->
-                 if (!filename.endsWith(".version") && !filename.endsWith(".gene_counts.txt")) filename
-                 }
-     publishDir "${params.outdir}/featureCounts_gene", mode: 'copy',
-         saveAs: { filename ->
-                 if (!filename.endsWith(".version") && !filename.endsWith(".transcript_counts.txt")) filename
+                 if (!filename.endsWith(".version")) filename
                  }
 
      input:
-     set val(name), file(bam), file(annot) from ch_feature_count
+     set val(name), file(bam), val(annot) from ch_feature_count
+     val transcriptquant from ch_transcriptquant
 
      output:
      file("*.txt") into ch_counts
      file("*.version") into ch_feat_counts_version
-     val "${params.outdir}/featureCounts_gene" into ch_deseq_indir
-     val "${params.outdir}/featureCounts_transcript" into ch_dex_indir
+     val "$baseDir/results/featureCounts_transcript" into ch_deseq2_indir
+     val "$baseDir/results/featureCounts_transcript" into ch_dexseq_indir
+
+     when:
+     transcriptquant == "stringtie"
 
      script:
-     txome_recon = (annot =~ /\.out\.gtf/) ? ".tx_recon" : ""
      """
-     featureCounts -T $task.cpus -a $annot -o ${name}${txome_recon}.gene_counts.txt $bam
-     featureCounts -g transcript_id --extraAttributes gene_id  -T $task.cpus -a $annot -o ${name}${txome_recon}.transcript_counts.txt $bam
+     featureCounts -g transcript_id --extraAttributes gene_id  -T $task.cpus -a $PWD/$annot -o ${name}.transcript_counts.txt $bam
      featureCounts -v &> featureCounts.version
      """
  }
 
 /*
- * STEP 4 - DESeq2
+ * STEP 2b - Bambu
+ */
+params.Bambuscript= "$baseDir/bin/runBambu.R"
+ch_Bambuscript = Channel.fromPath("$params.Bambuscript", checkIfExists:true)
+
+process Bambu {
+  publishDir "${params.outdir}/Bambu", mode: 'copy',
+        saveAs: { filename ->
+                      if (!filename.endsWith(".version")) filename
+                }
+
+  input:
+  set val(name), file(bam), file(genomeseq), file(annot) from ch_bambu_input
+  file Bambuscript from ch_Bambuscript
+  file sampleinfo from ch_input
+  val transcriptquant from ch_transcriptquant
+
+  output:
+  val "$baseDir/results/Bambu/counts_gene.txt" into ch_deseq2_in
+  val "$baseDir/results/Bambu/counts_transcript.txt" into ch_dexseq_in
+
+  when:
+  transcriptquant == "bambu"
+
+  script:
+  """
+  Rscript --vanilla $Bambuscript $PWD $sampleinfo $PWD/results/Bambu/ $annot $genomeseq
+  """
+}
+
+if( ch_transcriptquant == "stringtie"){
+  ch_deseq2_in = ch_deseq2_indir
+  ch_dexseq_in = ch_dexseq_indir
+}
+
+/*
+ * STEP 3 - DESeq2
  */
 params.DEscript= "$baseDir/bin/runDESeq2.R"
 ch_DEscript = Channel.fromPath("$params.DEscript", checkIfExists:true)
@@ -230,20 +306,24 @@ process DESeq2 {
   input:
   file sampleinfo from ch_input
   file DESeq2script from ch_DEscript
-  val indir from ch_deseq_indir
+  val inpath from ch_deseq2_in
+  val num_condition from ch_deseq2_num_condition
+  val transcriptquant from ch_transcriptquant
 
   output:
   file "*.txt" into ch_DEout
 
+  when:
+  num_condition >= 2
 
   script:
   """
-  Rscript --vanilla $DESeq2script ${PWD}/$indir $sampleinfo
+  Rscript --vanilla $DESeq2script $transcriptquant $inpath $sampleinfo 
   """
 }
 
 /*
- * STEP 5 - DEXseq
+ * STEP 4 - DEXseq
  */
 params.DEXscript= "$baseDir/bin/runDEXseq.R"
 ch_DEXscript = Channel.fromPath("$params.DEXscript", checkIfExists:true)
@@ -257,14 +337,19 @@ process DEXseq {
   input:
   file sampleinfo from ch_input
   file DEXscript from ch_DEXscript
-  val indir from ch_dex_indir
+  val inpath from ch_dexseq_in
+  val num_condition from ch_dexseq_num_condition
+  val transcriptquant from ch_transcriptquant
 
   output:
   file "*.txt" into ch_DEXout
 
+  when:
+  num_condition >= 2
+
   script:
   """
-  Rscript --vanilla $DEXscript ${PWD}/$indir $sampleinfo
+  Rscript --vanilla $DEXscript $transcriptquant $inpath $sampleinfo
   """
 }
 

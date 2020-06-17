@@ -37,6 +37,7 @@
   * [`--plaintext_email`](#--plaintext_email)
   * [`--monochrome_logs`](#--monochrome_logs)
   * [`--multiqc_config`](#--multiqc_config)
+  * [`--transcriptquant`](#--transcriptquant)
 <!-- TOC END -->
 
 
@@ -55,13 +56,19 @@ NXF_OPTS='-Xms1g -Xmx4g'
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run nf-core/nanornabam --input 'samples.csv' -profile docker
+nextflow main.nf \
+    --input <samplesheet.csv> \
+    --transcriptquant bambu \
+    -profile docker
 ```
-where samples.csv should contain three columns, namely
-| sample | bam            | annotion                 | condition       |     covariate       |
-|--------|----------------|--------------------------|-----------------|---------------------|
-|sampl1  | path_to_bamfile| path_annotation_fastafile| condition_value |     covariate_value |
-
+where samplesheet.csv should contain five columns, namely
+| Column          | Description                                                                                                                |
+|-----------------|----------------------------------------------------------------------------------------------------------------------------|
+| `sample`        | Sample name without spaces.                                                                                                |
+| `bam`           | Full path to read bam files.                                                                                               |
+| `genome`        | Genome fasta file for alignment. This can either be blank, a local path, or the appropriate key for a genome available in [iGenomes config file](../conf/igenomes.config). Must have the extension ".fasta", ".fasta.gz", ".fa" or ".fa.gz". |
+| `transcriptome` | Transcriptome fasta/gtf file for alignment. This can either be blank or a local path. Must have the extension ".fasta", ".fasta.gz", ".fa", ".fa.gz", ".gtf" or ".gtf.gz". |
+| `condition`     | Sample treatment/protocol-used/group. If more than two conditions, will proceed to differential expression analysis by DESeq2 and DEXSeq.|
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
 
@@ -256,3 +263,6 @@ Set to disable colourful command line output and live life in monochrome.
 
 ### `--multiqc_config`
 Specify a path to a custom MultiQC configuration file.
+
+### `--transcriptquant`
+Specify the transcript quantification method: stringtie or bambu (default).
