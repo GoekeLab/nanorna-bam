@@ -22,19 +22,8 @@ path<-args[2]
 #create a dataframe for all samples
 if (transcriptquant == "stringtie"){
   #count_files<- grep(list.files(path), pattern='tx_', inv=TRUE, value=TRUE)
-  count_files<- grep(list.files(path), pattern='tx_', inv=TRUE, value=TRUE)
-  fullpath<-paste(path,count_files[1],sep='/')
-  count.matrix <- data.frame(read.table(fullpath,sep="\t",header=TRUE)[,c(1,7,8)])
-  for(i in 2:length(count_files)){
-    fullpath<-paste(path,count_files[i],sep='/')
-    samp_df <- read.table(fullpath,sep="\t",header=T)[,c(1,8)]
-    count.matrix<- merge(count.matrix,samp_df,by="Geneid",all=TRUE)
-  }
-  df <- count.matrix[,-1]
-  rownames(df) <- count.matrix[,1]
-  df <- aggregate(. ~ gene_id, data=df, FUN=sum)
-  countTab <- df[,-1]
-  rownames(countTab) <- df[,1]
+  countTab <- data.frame(read.table(dir(path, pattern = "counts_gene.txt$", full.names = TRUE),sep="\t",header=TRUE, skip = 1))
+  countTab$Chr <- countTab$Start <- countTab$End <- countTab$Length <- countTab$Strand <- NULL
 }
 if (transcriptquant == "bambu"){
  
