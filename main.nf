@@ -52,6 +52,8 @@ if (params.help){
 if (params.input) { ch_input = file(params.input, checkIfExists: true) } else { exit 1, "Samplesheet file not specified!" }
 ch_transcriptquant = params.transcriptquant
 if (params.bamdir) { ch_bamdir = Channel.fromPath(params.bamdir, checkIfExists: true) } else { exit 1, "Please specify a valid input bam directory to perform bambu for multiple samples!" }
+if (params.bamdir) { ch_bamdir_fc = Channel.fromPath(params.bamdir, checkIfExists: true) } else { exit 1, "Please specify a valid input bam directory to perform bambu for multiple samples!" }
+
 // Has the run name been specified by the user?
 //  this has the bonus effect of catching both -name and --name
 custom_runName = params.name
@@ -167,7 +169,7 @@ ch_samplesheet_reformat
 ch_samplesheet_reformat
     .splitCsv(header:true, sep:',')
     .map { get_sample_info(it, params.genomes) }
-    .map {  it -> [ it[2], it[3] ]} // [samplename, bam, gtf, fasta]
+    .map {  it -> [ it[2], it[3] ]} // [gtf, fasta]
     .set { ch_bambu_input}
 
 
@@ -239,31 +241,32 @@ process GffCompare {
     """
 }
 
-ch_txome_feature_count
-   .combine(ch_merged_gtf)
-   .set {ch_feature_count}
+
 
 process FeatureCounts {
-     publishDir "${params.outdir}/featureCounts_transcript", mode: 'copy',
+     publishDir "${params.outdir}", mode: 'copy',
          saveAs: { filename ->
                  if (!filename.endsWith(".version")) filename
                  }
 
      input:
-     set val(name), file(bam), val(annot) from ch_feature_count
+     file annot from ch_merged_gtf
+     file bamdir from ch_bamdir_fc
      val transcriptquant from ch_transcriptquant
 
      output:
-     file("*.txt") into ch_counts
      file("*.version") into ch_feat_counts_version
-     file "featureCounts_transcript" into ch_deseq2_indir 
+     file "featureCounts_transcript" into ch_deseq2_indir, ch_dexseq_indir 
     
      when:
      transcriptquant == "stringtie"
 
      script:
      """
-     featureCounts -g transcript_id --extraAttributes gene_id  -T $task.cpus -a $annot -o ${name}.transcript_counts.txt $bam
+     mkdir featureCounts_transcript
+     featureCounts -L -O -f --primary --fraction  -F GTF -g transcript_id -t transcript -T $task.cpus -a $annot -o featureCounts_transcript/transcript_counts.txt $bamdir/*.bam
+     featureCounts -L -O -f --primary --fraction  -g gene_id -t exon -T $task.cpus -a $annot -o featureCounts_transcript/gene_counts.txt $bamdir/*.bam
+     cd ..
      featureCounts -v &> featureCounts.version
      """
  }
@@ -287,8 +290,8 @@ process Bambu {
   val transcriptquant from ch_transcriptquant
 
   output:
-  file "Bambu" into ch_deseq2_in 
-
+  file "Bambu" into ch_deseq2_in, ch_dexseq_in
+  
   
   
   when:
@@ -306,6 +309,10 @@ if( ch_transcriptquant == "stringtie"){
   ch_deseq2_indir
        .unique()
        .set {ch_deseq2_in}
+       
+  ch_dexseq_indir
+       .unique()
+       .set {ch_dexseq_in}
 }
 
 /*
@@ -329,7 +336,7 @@ process DESeq2 {
 
   output:
   file "*.txt" into ch_DEout
-  file inpath into ch_dexseq_in
+ 
 
   when:
   num_condition >= 2
