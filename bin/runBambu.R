@@ -2,15 +2,23 @@
 
 ##install bambu if bambu is not installed
 ##load bambu
-if (!requireNamespace("devtools", quietly = TRUE)){
-    install.packages("devtools", repos='http://cran.us.r-project.org')
-}
-if (!require("bambu")){
-    devtools::install_github("GoekeLab/bambu")
-    library(bambu)
+library(bambu)
+
+if (!requireNamespace("BSgenome", quietly = TRUE)){
+  
+  install.packages("BiocManager", repos='http://cran.us.r-project.org')
+  BiocManager::install("BSgenome",update = FALSE, ask= FALSE)
+  
+  
 }
 
+
 args = commandArgs(trailingOnly=TRUE)
+
+readlist <- dir(args[1],full.names = TRUE, pattern = ".bam$")
+output_tag <- args[2]
+ncore <- args[3]
+
 if (length(args) < 4) {
   stop("Please input the fullpath for the present directory and the sample sheet.", call.=FALSE)
 } else if (length(args)==4) {
@@ -24,15 +32,13 @@ if (length(args) < 4) {
   genomeseq <- "BSgenome.Hsapiens.NCBI.GRCh38"  #use BSgenome if fasta file is not provided
 } else {
   genomeseq <- args[5]
+  genomeSequence <- Rsamtools::FaFile(genomeseq)
+  Rsamtools::indexFa(genomeseq)
 }
-
-pwd <- args[1]
-sampInfo <- read.table(args[2], header = TRUE, sep=",")
-output_tag <- args[3]
 annot_gtf <- args[4]
-readlist <- sampInfo$bam
-readlist <- paste(pwd,readlist,sep="/")
+
+
 grlist <- prepareAnnotationsFromGTF(annot_gtf)
-se <- bambu(reads = readlist, annotations=grlist,genomeSequence = genomeseq)
-writeBambuOutput(se,output_tag)
+se <- bambu(reads = readlist, annotations = grlist,genomeSequence = genomeSequence, ncore = ncore, verbose = TRUE)
+writeBambuOutput(se, output_tag)
 

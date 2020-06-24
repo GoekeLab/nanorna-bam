@@ -26,18 +26,13 @@ if (length(args) < 3) {
 #path <- "~/Downloads/nanorna-bam-master/mod/featureCounts_transcript/"
 transcriptquant <- args[1]
 path<-args[2]
-if (identical(transcriptquant,"stringtie") == TRUE){
-  count_files<- grep(list.files(path), pattern='tx_', inv=T, value=T)
-  #create a dataframe for all samples 
-  fullpath<-paste(path,count_files[1],sep='/') 
-  count.matrix <- data.frame(read.table(fullpath,sep="\t",header=T)[,c(1,7,8)])
-  for(i in 2:length(count_files)){
-    fullpath<-paste(path,count_files[i],sep='/') 
-    samp_df <- read.table(fullpath,sep="\t",header=T)[,c(1,8)]
-    count.matrix<- merge(count.matrix,samp_df,by="Geneid",all=TRUE)
-  }
-}else if (identical(transcriptquant,"bambu") == TRUE){
-  count.matrix <- data.frame(read.table(path,sep="\t",header=T))
+if (transcriptquant == "stringtie"){
+  count.matrix <- data.frame(read.table(dir(path, pattern = "counts_transcript.txt$", full.names = TRUE),sep="\t",header=TRUE, skip = 1))
+  count.matrix$Chr <- count.matrix$Start <- count.matrix$End <- count.matrix$Length <- count.matrix$Strand <- NULL
+}
+
+if (transcriptquant == "bambu"){
+  count.matrix <- data.frame(read.table(dir(path, pattern = "counts_transcript", full.names = TRUE),sep="\t",header=T))
 }
 colnames(count.matrix)[1] <- "feature_id"
 colnames(count.matrix)[2] <- "gene_id"
