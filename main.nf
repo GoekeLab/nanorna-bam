@@ -235,7 +235,7 @@ process GffCompare {
     script:
     """
     ls -d -1 $PWD/$stringtie_dir/*.out.gtf > gtf_list.txt
-    echo "$annot" >> /gtf_list.txt
+    echo "$annot" >> gtf_list.txt
     gffcompare -i gtf_list.txt -o merged
     gffcompare --version &> gffcompare.version
     """
