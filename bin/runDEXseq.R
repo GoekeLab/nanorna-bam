@@ -5,13 +5,17 @@ if (!requireNamespace("BiocManager", quietly = TRUE)){
  }
 if (!require("DRIMSeq")){
     BiocManager::install("DRIMSeq",update = FALSE, ask= FALSE)
+    library(DRIMSeq)
 }
 if (!require("DEXSeq")){
     BiocManager::install("DEXSeq",update = FALSE, ask= FALSE)
+    library(DEXSeq)
 }
 if (!require("stageR")){
     BiocManager::install("stageR",update = FALSE, ask= FALSE)
+    library(stageR)
 }
+
 
 args = commandArgs(trailingOnly=TRUE)
 if (length(args) < 3) {
@@ -22,18 +26,13 @@ if (length(args) < 3) {
 #path <- "~/Downloads/nanorna-bam-master/mod/featureCounts_transcript/"
 transcriptquant <- args[1]
 path<-args[2]
-if (identical(transcriptquant,"stringtie") == TRUE){
-  count_files<- grep(list.files(path), pattern='tx_', inv=T, value=T)
-  #create a dataframe for all samples 
-  fullpath<-paste(path,count_files[1],sep='/') 
-  count.matrix <- data.frame(read.table(fullpath,sep="\t",header=T)[,c(1,7,8)])
-  for(i in 2:length(count_files)){
-    fullpath<-paste(path,count_files[i],sep='/') 
-    samp_df <- read.table(fullpath,sep="\t",header=T)[,c(1,8)]
-    count.matrix<- merge(count.matrix,samp_df,by="Geneid",all=TRUE)
-  }
-}else if (identical(transcriptquant,"bambu") == TRUE){
-  count.matrix <- data.frame(read.table(path,sep="\t",header=T))
+if (transcriptquant == "stringtie"){
+  count.matrix <- data.frame(read.table(dir(path, pattern = "counts_transcript.txt$", full.names = TRUE),sep="\t",header=TRUE, skip = 1))
+  count.matrix$Chr <- count.matrix$Start <- count.matrix$End <- count.matrix$Length <- count.matrix$Strand <- NULL
+}
+
+if (transcriptquant == "bambu"){
+  count.matrix <- data.frame(read.table(dir(path, pattern = "counts_transcript", full.names = TRUE),sep="\t",header=T))
 }
 colnames(count.matrix)[1] <- "feature_id"
 colnames(count.matrix)[2] <- "gene_id"
@@ -48,14 +47,17 @@ for (i in length(condition_names):1){
   lgcolName <- paste(lgcolName,condition_names[i],sep='_')
 }
 ######### Filtering #############
+
+cat(paste(sampleinfo$sample_id, collapse = " "))
+cat(paste(colnames(count.matrix), collapse = " "))
 d <- dmDSdata(counts=count.matrix, samples=sampleinfo)
 # include genes expressed in minimal min_samps_gene_expr samples with min_gene_expr
 # include transcripts expressed in min_samps_feature_expr samples with min_feature_expr;  
 # include transcripts expressed in min_samps_feature_prop samples with min_feature_prop;
 n_samp_gene <- length(sampleinfo$sample_id)/2
 n_samp_feature <- length(sampleinfo$sample_id)/2
-min_count_gene <- 10 
-min_count_feature <- 10
+min_count_gene <- 5 
+min_count_feature <- 5
 dFilter <- dmFilter(d,
                     min_samps_feature_expr = n_samp_feature, 
                     min_samps_feature_prop = n_samp_feature,
@@ -66,7 +68,7 @@ dFilter <- dmFilter(d,
 
 ########## DEXSeq #########
 formulaFullModel <- as.formula("~sample + exon + condition:exon")
-formulaReducedModel <- as.formula("~sample + exon + covariate:exon")
+#formulaReducedModel <- as.formula("~sample + exon + covariate:exon")
 dxd <- DEXSeqDataSet(countData=round(as.matrix(counts(dFilter)[,-c(1:2)])),
                      sampleData=DRIMSeq::samples(dFilter),
                      design=formulaFullModel,
@@ -77,7 +79,8 @@ dxd <- estimateSizeFactors(dxd)
 print('Size factor estimated')
 dxd <- estimateDispersions(dxd, formula = formulaFullModel)
 print('Dispersion estimated')
-dxd <- testForDEU(dxd, reducedModel = formulaReducedModel, fullModel = formulaFullModel)
+#reducedModel = formulaReducedModel, 
+dxd <- testForDEU(dxd, fullModel = formulaFullModel)
 print('DEU tested')
 dxd <- estimateExonFoldChanges(dxd)
 print('Exon fold changes estimated')

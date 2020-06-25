@@ -5,3 +5,7 @@ results/
 .DS_Store
 tests/test_data
 *.pyc
+.Rproj.user
+.Rproj
+.gitignore
+nanorna-bam.Rproj
