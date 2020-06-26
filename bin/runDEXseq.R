@@ -29,6 +29,7 @@ path<-args[2]
 if (transcriptquant == "stringtie"){
   count.matrix <- data.frame(read.table(dir(path, pattern = "counts_transcript.txt$", full.names = TRUE),sep="\t",header=TRUE, skip = 1))
   count.matrix$Chr <- count.matrix$Start <- count.matrix$End <- count.matrix$Length <- count.matrix$Strand <- NULL
+  colnames(count.matrix)[3:length(colnames(count.matrix))] <- unlist(lapply(strsplit(colnames(count.matrix)[3:length(colnames(count.matrix))],"\\."),"[[",2))
 }
 
 if (transcriptquant == "bambu"){
