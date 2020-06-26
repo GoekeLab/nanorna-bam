@@ -265,7 +265,7 @@ process FeatureCounts {
      """
      mkdir featureCounts_transcript
      featureCounts -L -O -f --primary --fraction  -F GTF -g transcript_id -t transcript --extraAttributes gene_id -T $task.cpus -a $annot -o featureCounts_transcript/counts_transcript.txt $bamdir/*.bam 2>> featureCounts_transcript/counts_transcript.log
-     featureCounts -L -O -f --primary --fraction  -g gene_id -t exon -T $task.cpus -a $annot -o featureCounts_transcript/counts_gene.txt $bamdir/*.bam 2>> featureCounts_transcript/counts_gene.log
+     featureCounts -L -O -f -g gene_id -t exon -T $task.cpus -a $annot -o featureCounts_transcript/counts_gene.txt $bamdir/*.bam 2>> featureCounts_transcript/counts_gene.log
      featureCounts -v &> featureCounts.version
      """
  }
