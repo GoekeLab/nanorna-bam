@@ -43,7 +43,7 @@ if header != HEADER:
     print("{} header: {} != {}".format(ERROR_STR,','.join(header),','.join(HEADER)))
     sys.exit(1)
 
-outLines,condition_list = [],[]
+outLines,conditions = [],{}
 while True:
     line = fin.readline()
     if line:
@@ -104,8 +104,10 @@ while True:
             
         ## CHECK CONDITION ENTRIES
         if condition:
-            if condition not in condition_list:
-                condition_list.append(condition)
+            if condition not in conditions:
+                conditions[condition] = 1
+            else:
+                conditions[condition] += 1
 
         outLines.append([sample,bam,genome,transcriptome])
     else:
@@ -116,9 +118,12 @@ while True:
 fout = open(args.DESIGN_FILE_OUT,'w')
 fout.write(','.join(['sample', 'bam', 'genome', 'transcriptome', 'is_transcripts']) + '\n')
 for line in outLines:
-    print(line)
     fout.write(','.join(line) + '\n')
 fout.close()
 
 outfile=open("total_conditions.csv","w")
-outfile.write(",".join(condition_list)+"\n")
+num_samp = next(iter(conditions.values()))
+if num_samp >= 3 and all(samples == num_samp for samples in conditions.values()):
+    outfile.write(",".join(conditions)+"\n")
+else:
+    outfile.write("false")
