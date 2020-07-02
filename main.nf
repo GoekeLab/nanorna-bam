@@ -216,7 +216,7 @@ ch_annot
    .unique()
    .set{ch_annotation}
 
-process GffCompare {
+process StringTie2Merge {
     publishDir "${params.outdir}/stringtie2", mode: 'copy',
         saveAs: { filename ->
                       if (!filename.endsWith(".version")) filename
@@ -235,13 +235,9 @@ process GffCompare {
     script:
     """
     ls -d -1 $PWD/$stringtie_dir/*.out.gtf > gtf_list.txt
-    echo "$annot" >> gtf_list.txt
-    gffcompare -i gtf_list.txt -o merged
-    gffcompare --version &> gffcompare.version
+    stringtie --merge gtf_list.txt -G $annot -o merged.combined.gtf
     """
 }
-
-
 
 process FeatureCounts {
      publishDir "${params.outdir}", mode: 'copy',
